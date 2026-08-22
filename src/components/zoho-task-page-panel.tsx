@@ -32,7 +32,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { useTask, useUpdateTask, useCreateTask } from "@/hooks/use-tasks";
 import { useBugs, useCreateBug, useUpdateBug, useAddBugComment } from "@/hooks/use-bugs";
 import { useCreateTaskUpdate } from "@/hooks/use-task-updates";
-import { useCreateTimeLog } from "@/hooks/use-time-logs";
+import { useCreateTimeLog, useUpdateTimeLog } from "@/hooks/use-time-logs";
 import { useUsers } from "@/hooks/use-users";
 import {
   BUG_PRIORITIES,
@@ -68,7 +68,19 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
   const updateBug = useUpdateBug();
   const addBugComment = useAddBugComment();
   const createTaskUpdate = useCreateTaskUpdate();
-  const createTimeLog = useCreateTimeLog();
+  const updateTimeLog = useUpdateTimeLog();
+
+  const handleUpdateTimeLogStatus = async (logId: string, newStatus: string) => {
+    try {
+      await updateTimeLog.mutateAsync({
+        id: logId,
+        input: { status: newStatus as any },
+      });
+      toast.success(`Time log marked as ${newStatus}`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update time log status");
+    }
+  };
 
   const [activeTab, setActiveTab] = useState<
     "overview" | "updates" | "timelogs" | "bugs" | "testing" | "activity"
@@ -1107,9 +1119,30 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                               <td className="p-3 font-mono font-bold text-emerald-400">{(l.minutes / 60).toFixed(1)} hrs</td>
                               <td className="p-3 text-text">{l.note || "No details"}</td>
                               <td className="p-3">
-                                <Badge variant="outline" className="text-[10px]">
-                                  {l.status}
-                                </Badge>
+                                {isManagerOrAdmin ? (
+                                  <select
+                                    value={l.status || "PENDING"}
+                                    onChange={(e) => handleUpdateTimeLogStatus(l.id, e.target.value)}
+                                    className="rounded border border-border bg-background px-2 py-1 text-[11px] font-semibold text-text"
+                                  >
+                                    <option value="PENDING">🟡 PENDING</option>
+                                    <option value="APPROVED">🟢 APPROVED</option>
+                                    <option value="REJECTED">🔴 REJECTED</option>
+                                  </select>
+                                ) : (
+                                  <Badge
+                                    variant="outline"
+                                    className={`text-[10px] font-bold ${
+                                      l.status === "APPROVED"
+                                        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                        : l.status === "REJECTED"
+                                        ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                                        : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                                    }`}
+                                  >
+                                    {l.status ? (l.status === "APPROVED" ? "APPROVED" : l.status === "REJECTED" ? "REJECTED" : "PENDING") : "PENDING"}
+                                  </Badge>
+                                )}
                               </td>
                             </tr>
                           ))}
