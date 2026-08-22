@@ -389,7 +389,7 @@ export function SeoPage() {
   const top10Count = keywords.filter((k) => k.currentRank && k.currentRank <= 10).length;
   const publishedBriefs = briefs.filter((b) => b.status === "PUBLISHED").length;
   const verifiedBacklinksCount = backlinks.filter(
-    (bl) => (localBacklinkStatuses[bl.id] || bl.status) === "VERIFIED" || bl.status === "ACTIVE"
+    (bl) => (localBacklinkStatuses[bl.id] || bl.status) === "VERIFIED"
   ).length;
 
   return (
@@ -915,7 +915,7 @@ export function SeoPage() {
                           </td>
                           <td className="p-3">
                             <span className={`text-[9px] px-2 py-0.5 rounded font-bold uppercase border ${
-                              currentStatus === "VERIFIED" || currentStatus === "ACTIVE"
+                              currentStatus === "VERIFIED"
                                 ? "bg-green-500/10 text-green-400 border-green-500/20"
                                 : currentStatus === "REJECTED"
                                 ? "bg-red-500/10 text-red-400 border-red-500/20"

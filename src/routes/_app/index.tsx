@@ -93,7 +93,7 @@ function Dashboard() {
     return [...audits].sort((a, b) => new Date(b.runAt).getTime() - new Date(a.runAt).getTime())[0];
   }, [audits]);
 
-  const activeBacklinkCount = backlinks?.filter((b) => b.status === "ACTIVE").length ?? 0;
+  const activeBacklinkCount = backlinks?.filter((b) => b.status === "VERIFIED").length ?? 0;
 
   const maxStageCount = useMemo(() => {
     if (!recruitmentSummary) return 1;
