@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   AlertCircle,
   AlertTriangle,
+  ArrowLeft,
   ArrowRight,
   Bug as BugIcon,
   CheckCircle2,
@@ -287,7 +288,18 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
       {/* ── Top Header Panel ── */}
       <div className="border-b border-border bg-card p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-1">
+          <div className="space-y-2">
+            {onClose && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onClose}
+                className="gap-1.5 text-xs font-semibold text-text-dim hover:text-foreground border-border/80"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Tasks List
+              </Button>
+            )}
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="font-mono text-xs text-primary">
                 Task #{detailedTask.taskNumber}

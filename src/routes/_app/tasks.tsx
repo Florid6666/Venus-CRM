@@ -87,10 +87,27 @@ function TasksPage() {
     (t) => t.testerId === currentUser?.id || t.status === "READY_FOR_TESTING"
   );
 
+  if (selectedTaskId) {
+    return (
+      <div className="flex h-[calc(100vh-4rem)] w-full overflow-hidden bg-background text-text">
+        <div className="flex-1 flex flex-col h-full overflow-hidden bg-card">
+          <ZohoTaskPagePanel
+            taskId={selectedTaskId}
+            onClose={() => setSelectedTaskId(null)}
+          />
+        </div>
+        <TaskFormDialog
+          open={showCreateTaskDialog}
+          onOpenChange={setShowCreateTaskDialog}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-[calc(100vh-4rem)] overflow-hidden bg-background text-text">
-      {/* ── Main Left/Center Task Workspace ── */}
-      <div className={`flex flex-col flex-1 overflow-y-auto ${selectedTaskId ? "hidden md:flex md:w-1/2 lg:w-5/12 border-r border-border" : "w-full"}`}>
+      {/* ── Main Task Workspace ── */}
+      <div className="flex flex-col flex-1 overflow-y-auto w-full">
         {/* Workspace Header */}
         <div className="border-b border-border bg-card/60 p-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -365,15 +382,7 @@ function TasksPage() {
         </div>
       </div>
 
-      {/* ── Dedicated Right Page Panel Workspace (No Popup Dialog!) ── */}
-      {selectedTaskId && (
-        <div className="flex-1 flex flex-col h-full overflow-hidden bg-card">
-          <ZohoTaskPagePanel
-            taskId={selectedTaskId}
-            onClose={() => setSelectedTaskId(null)}
-          />
-        </div>
-      )}
+
 
       {/* Create Task Form Dialog */}
       <TaskFormDialog

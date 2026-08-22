@@ -180,6 +180,14 @@ function ProjectDetailPage() {
     return <div className="p-6 text-text-dim text-sm">Loading…</div>;
   }
 
+  if (editingTaskId) {
+    return (
+      <div className="p-6 max-w-[1600px] mx-auto min-h-[calc(100vh-4rem)]">
+        <ZohoTaskPagePanel taskId={editingTaskId} onClose={() => setEditingTaskId(null)} />
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 max-w-[1600px] mx-auto space-y-4">
       <Link
@@ -238,24 +246,14 @@ function ProjectDetailPage() {
         </TabsList>
 
         <TabsContent value="board" className="mt-4">
-          <div className="flex flex-col lg:flex-row gap-6">
-            <div className={`flex-1 transition-all ${editingTaskId ? "lg:w-1/2" : "w-full"}`}>
-              <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                  {TASK_STATUSES.map((status) => (
-                    <KanbanColumn key={status} status={status} tasks={columns[status]} onTaskClick={setEditingTaskId} />
-                  ))}
-                </div>
-                <DragOverlay>{activeTask && <TaskCard task={activeTask} dragging />}</DragOverlay>
-              </DndContext>
+          <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+              {TASK_STATUSES.map((status) => (
+                <KanbanColumn key={status} status={status} tasks={columns[status]} onTaskClick={setEditingTaskId} />
+              ))}
             </div>
-
-            {editingTaskId && (
-              <div className="lg:w-1/2 rounded-xl border border-border bg-card shadow-lg overflow-hidden h-[75vh]">
-                <ZohoTaskPagePanel taskId={editingTaskId} onClose={() => setEditingTaskId(null)} />
-              </div>
-            )}
-          </div>
+            <DragOverlay>{activeTask && <TaskCard task={activeTask} dragging />}</DragOverlay>
+          </DndContext>
         </TabsContent>
 
         <TabsContent value="updates" className="mt-4">
