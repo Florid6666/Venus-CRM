@@ -32,7 +32,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { useTask, useUpdateTask, useCreateTask } from "@/hooks/use-tasks";
 import { useBugs, useCreateBug, useUpdateBug, useAddBugComment } from "@/hooks/use-bugs";
 import { useCreateTaskUpdate } from "@/hooks/use-task-updates";
-import { useCreateTimeLog, useUpdateTimeLog } from "@/hooks/use-time-logs";
+import { useCreateTimeLog, useReviewTimeLog } from "@/hooks/use-time-logs";
 import { useUsers } from "@/hooks/use-users";
 import {
   BUG_PRIORITIES,
@@ -68,11 +68,12 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
   const updateBug = useUpdateBug();
   const addBugComment = useAddBugComment();
   const createTaskUpdate = useCreateTaskUpdate();
-  const updateTimeLog = useUpdateTimeLog();
+  const createTimeLog = useCreateTimeLog();
+  const reviewTimeLog = useReviewTimeLog();
 
   const handleUpdateTimeLogStatus = async (logId: string, newStatus: string) => {
     try {
-      await updateTimeLog.mutateAsync({
+      await reviewTimeLog.mutateAsync({
         id: logId,
         input: { status: newStatus as any },
       });

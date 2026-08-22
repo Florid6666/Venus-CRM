@@ -41,7 +41,7 @@ function Dashboard() {
 
   const { data: appSettings } = useAppSettings();
   const { data: salesStats } = useSalesStats(showSales);
-  const { data: sprints } = useSprints(showDev);
+  const { data: sprints } = useSprints(undefined, showDev);
   const { data: tasks } = useTasks({}, showDev);
   const { data: channels } = useChannels();
   const { data: recruitmentSummary } = useRecruitmentAnalyticsSummary(showRecruitment);
