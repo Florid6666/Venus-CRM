@@ -10,7 +10,7 @@ import type { Project, ProjectStatus } from "@/lib/api/types";
 
 import { useAuthStore } from "@/stores/auth-store";
 
-export const Route = createFileRoute("/_app/projects")({
+export const Route = createFileRoute("/_app/projects/")({
   component: ProjectsPage,
 });
 

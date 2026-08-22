@@ -21,7 +21,6 @@ import { Route as AppSeoRouteImport } from './routes/_app/seo'
 import { Route as AppScreenMonitoringRouteImport } from './routes/_app/screen-monitoring'
 import { Route as AppSalesRouteImport } from './routes/_app/sales'
 import { Route as AppRecruitmentRouteImport } from './routes/_app/recruitment'
-import { Route as AppProjectsRouteImport } from './routes/_app/projects'
 import { Route as AppOutreachRouteImport } from './routes/_app/outreach'
 import { Route as AppLoginPhotosRouteImport } from './routes/_app/login-photos'
 import { Route as AppKnowledgeRouteImport } from './routes/_app/knowledge'
@@ -34,6 +33,7 @@ import { Route as AppBulkEmailRouteImport } from './routes/_app/bulk-email'
 import { Route as AppAttendanceRouteImport } from './routes/_app/attendance'
 import { Route as AppAnalyticsRouteImport } from './routes/_app/analytics'
 import { Route as AppAccountRouteImport } from './routes/_app/account'
+import { Route as AppProjectsIndexRouteImport } from './routes/_app/projects.index'
 import { Route as AppDealsIndexRouteImport } from './routes/_app/deals.index'
 import { Route as AppProjectsIdRouteImport } from './routes/_app/projects.$id'
 import { Route as AppDealsIdRouteImport } from './routes/_app/deals.$id'
@@ -98,11 +98,6 @@ const AppRecruitmentRoute = AppRecruitmentRouteImport.update({
   path: '/recruitment',
   getParentRoute: () => AppRoute,
 } as any)
-const AppProjectsRoute = AppProjectsRouteImport.update({
-  id: '/projects',
-  path: '/projects',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppOutreachRoute = AppOutreachRouteImport.update({
   id: '/outreach',
   path: '/outreach',
@@ -163,15 +158,20 @@ const AppAccountRoute = AppAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => AppRoute,
 } as any)
+const AppProjectsIndexRoute = AppProjectsIndexRouteImport.update({
+  id: '/projects/',
+  path: '/projects/',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDealsIndexRoute = AppDealsIndexRouteImport.update({
   id: '/deals/',
   path: '/deals/',
   getParentRoute: () => AppRoute,
 } as any)
 const AppProjectsIdRoute = AppProjectsIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AppProjectsRoute,
+  id: '/projects/$id',
+  path: '/projects/$id',
+  getParentRoute: () => AppRoute,
 } as any)
 const AppDealsIdRoute = AppDealsIdRouteImport.update({
   id: '/deals/$id',
@@ -203,7 +203,6 @@ export interface FileRoutesByFullPath {
   '/knowledge': typeof AppKnowledgeRoute
   '/login-photos': typeof AppLoginPhotosRoute
   '/outreach': typeof AppOutreachRoute
-  '/projects': typeof AppProjectsRouteWithChildren
   '/recruitment': typeof AppRecruitmentRoute
   '/sales': typeof AppSalesRoute
   '/screen-monitoring': typeof AppScreenMonitoringRoute
@@ -213,6 +212,7 @@ export interface FileRoutesByFullPath {
   '/deals/$id': typeof AppDealsIdRoute
   '/projects/$id': typeof AppProjectsIdRoute
   '/deals/': typeof AppDealsIndexRoute
+  '/projects/': typeof AppProjectsIndexRoute
 }
 export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
@@ -232,7 +232,6 @@ export interface FileRoutesByTo {
   '/knowledge': typeof AppKnowledgeRoute
   '/login-photos': typeof AppLoginPhotosRoute
   '/outreach': typeof AppOutreachRoute
-  '/projects': typeof AppProjectsRouteWithChildren
   '/recruitment': typeof AppRecruitmentRoute
   '/sales': typeof AppSalesRoute
   '/screen-monitoring': typeof AppScreenMonitoringRoute
@@ -243,6 +242,7 @@ export interface FileRoutesByTo {
   '/deals/$id': typeof AppDealsIdRoute
   '/projects/$id': typeof AppProjectsIdRoute
   '/deals': typeof AppDealsIndexRoute
+  '/projects': typeof AppProjectsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -264,7 +264,6 @@ export interface FileRoutesById {
   '/_app/knowledge': typeof AppKnowledgeRoute
   '/_app/login-photos': typeof AppLoginPhotosRoute
   '/_app/outreach': typeof AppOutreachRoute
-  '/_app/projects': typeof AppProjectsRouteWithChildren
   '/_app/recruitment': typeof AppRecruitmentRoute
   '/_app/sales': typeof AppSalesRoute
   '/_app/screen-monitoring': typeof AppScreenMonitoringRoute
@@ -275,6 +274,7 @@ export interface FileRoutesById {
   '/_app/deals/$id': typeof AppDealsIdRoute
   '/_app/projects/$id': typeof AppProjectsIdRoute
   '/_app/deals/': typeof AppDealsIndexRoute
+  '/_app/projects/': typeof AppProjectsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -297,7 +297,6 @@ export interface FileRouteTypes {
     | '/knowledge'
     | '/login-photos'
     | '/outreach'
-    | '/projects'
     | '/recruitment'
     | '/sales'
     | '/screen-monitoring'
@@ -307,6 +306,7 @@ export interface FileRouteTypes {
     | '/deals/$id'
     | '/projects/$id'
     | '/deals/'
+    | '/projects/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/forgot-password'
@@ -326,7 +326,6 @@ export interface FileRouteTypes {
     | '/knowledge'
     | '/login-photos'
     | '/outreach'
-    | '/projects'
     | '/recruitment'
     | '/sales'
     | '/screen-monitoring'
@@ -337,6 +336,7 @@ export interface FileRouteTypes {
     | '/deals/$id'
     | '/projects/$id'
     | '/deals'
+    | '/projects'
   id:
     | '__root__'
     | '/_app'
@@ -357,7 +357,6 @@ export interface FileRouteTypes {
     | '/_app/knowledge'
     | '/_app/login-photos'
     | '/_app/outreach'
-    | '/_app/projects'
     | '/_app/recruitment'
     | '/_app/sales'
     | '/_app/screen-monitoring'
@@ -368,6 +367,7 @@ export interface FileRouteTypes {
     | '/_app/deals/$id'
     | '/_app/projects/$id'
     | '/_app/deals/'
+    | '/_app/projects/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -465,13 +465,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRecruitmentRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/projects': {
-      id: '/_app/projects'
-      path: '/projects'
-      fullPath: '/projects'
-      preLoaderRoute: typeof AppProjectsRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/outreach': {
       id: '/_app/outreach'
       path: '/outreach'
@@ -556,6 +549,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAccountRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/projects/': {
+      id: '/_app/projects/'
+      path: '/projects'
+      fullPath: '/projects/'
+      preLoaderRoute: typeof AppProjectsIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/deals/': {
       id: '/_app/deals/'
       path: '/deals'
@@ -565,10 +565,10 @@ declare module '@tanstack/react-router' {
     }
     '/_app/projects/$id': {
       id: '/_app/projects/$id'
-      path: '/$id'
+      path: '/projects/$id'
       fullPath: '/projects/$id'
       preLoaderRoute: typeof AppProjectsIdRouteImport
-      parentRoute: typeof AppProjectsRoute
+      parentRoute: typeof AppRoute
     }
     '/_app/deals/$id': {
       id: '/_app/deals/$id'
@@ -587,18 +587,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface AppProjectsRouteChildren {
-  AppProjectsIdRoute: typeof AppProjectsIdRoute
-}
-
-const AppProjectsRouteChildren: AppProjectsRouteChildren = {
-  AppProjectsIdRoute: AppProjectsIdRoute,
-}
-
-const AppProjectsRouteWithChildren = AppProjectsRoute._addFileChildren(
-  AppProjectsRouteChildren,
-)
-
 interface AppRouteChildren {
   AppAccountRoute: typeof AppAccountRoute
   AppAnalyticsRoute: typeof AppAnalyticsRoute
@@ -612,7 +600,6 @@ interface AppRouteChildren {
   AppKnowledgeRoute: typeof AppKnowledgeRoute
   AppLoginPhotosRoute: typeof AppLoginPhotosRoute
   AppOutreachRoute: typeof AppOutreachRoute
-  AppProjectsRoute: typeof AppProjectsRouteWithChildren
   AppRecruitmentRoute: typeof AppRecruitmentRoute
   AppSalesRoute: typeof AppSalesRoute
   AppScreenMonitoringRoute: typeof AppScreenMonitoringRoute
@@ -621,7 +608,9 @@ interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppAdminSettingsRoute: typeof AppAdminSettingsRoute
   AppDealsIdRoute: typeof AppDealsIdRoute
+  AppProjectsIdRoute: typeof AppProjectsIdRoute
   AppDealsIndexRoute: typeof AppDealsIndexRoute
+  AppProjectsIndexRoute: typeof AppProjectsIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -637,7 +626,6 @@ const AppRouteChildren: AppRouteChildren = {
   AppKnowledgeRoute: AppKnowledgeRoute,
   AppLoginPhotosRoute: AppLoginPhotosRoute,
   AppOutreachRoute: AppOutreachRoute,
-  AppProjectsRoute: AppProjectsRouteWithChildren,
   AppRecruitmentRoute: AppRecruitmentRoute,
   AppSalesRoute: AppSalesRoute,
   AppScreenMonitoringRoute: AppScreenMonitoringRoute,
@@ -646,7 +634,9 @@ const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppAdminSettingsRoute: AppAdminSettingsRoute,
   AppDealsIdRoute: AppDealsIdRoute,
+  AppProjectsIdRoute: AppProjectsIdRoute,
   AppDealsIndexRoute: AppDealsIndexRoute,
+  AppProjectsIndexRoute: AppProjectsIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
