@@ -18,4 +18,8 @@ export class CreateSprintDto {
   @IsOptional()
   @IsUUID()
   departmentId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  projectId?: string;
 }

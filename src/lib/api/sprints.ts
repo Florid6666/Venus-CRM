@@ -6,10 +6,12 @@ export interface CreateSprintInput {
   startDate: string;
   endDate: string;
   status: "PLANNING" | "ACTIVE" | "COMPLETED";
+  projectId?: string;
 }
 
-export function listSprints() {
-  return apiFetch<Sprint[]>("/sprints");
+export function listSprints(projectId?: string) {
+  const query = projectId ? `?projectId=${encodeURIComponent(projectId)}` : "";
+  return apiFetch<Sprint[]>(`/sprints${query}`);
 }
 
 export function createSprint(input: CreateSprintInput) {

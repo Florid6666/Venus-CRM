@@ -20,6 +20,7 @@ import {
   RefreshCw,
   GitCommit as GitCommitIcon,
   MessageSquare,
+  Folder,
 } from "lucide-react";
 import { Calendar as BigCalendar, dateFnsLocalizer } from 'react-big-calendar';
 import { format } from 'date-fns/format';
@@ -48,6 +49,7 @@ import {
 import { useCommits, useCreateCommit, useMergePR, useDeclinePR } from "@/hooks/use-commits";
 import { useSprintTaskUpdates } from "@/hooks/use-task-updates";
 import { TaskFormDialog } from "@/components/task-form-dialog";
+import { ZohoTaskPagePanel } from "@/components/zoho-task-page-panel";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -100,18 +102,33 @@ function DevPage() {
   const [githubDialogOpen, setGithubDialogOpen] = useState(false);
   const [githubUsernameInput, setGithubUsernameInput] = useState(currentUserFull?.githubUsername || "");
   
+  // Project Scope Filter
+  const [selectedProjectId, setSelectedProjectId] = useState<string>("ALL_PROJECTS");
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+
   // Scoped tasks for Dev department
   const { data: tasks, isLoading: tasksLoading } = useTasks({
     departmentId: currentUser?.department?.id,
   });
 
-  const { data: sprints, isLoading: sprintsLoading } = useSprints();
+  const { data: sprints, isLoading: sprintsLoading } = useSprints(
+    selectedProjectId === "ALL_PROJECTS" ? undefined : selectedProjectId
+  );
   const { data: commits, isLoading: commitsLoading } = useCommits();
   const { data: analytics } = useAnalyticsSummary();
   const devMetrics = analytics?.dev;
   const { data: epics } = useEpics(currentUser?.department?.id);
   const { data: releases } = useReleases(currentUser?.department?.id);
   const { data: projects } = useProjects({ departmentId: currentUser?.department?.id });
+
+  // Filter tasks dynamically by selected project
+  const filteredTasks = useMemo(() => {
+    if (!tasks) return [];
+    if (selectedProjectId === "ALL_PROJECTS") return tasks;
+    return tasks.filter(
+      (t) => t.projectId === selectedProjectId || t.project?.id === selectedProjectId
+    );
+  }, [tasks, selectedProjectId]);
 
   // Mutations
   const createProject = useCreateProject();
@@ -132,6 +149,7 @@ function DevPage() {
   const [sprintName, setSprintName] = useState("");
   const [sprintStart, setSprintStart] = useState("");
   const [sprintEnd, setSprintEnd] = useState("");
+  const [sprintProjectId, setSprintProjectId] = useState("none");
 
   // Create Task Dialog State
   const [createTaskOpen, setCreateTaskOpen] = useState(false);
@@ -150,8 +168,6 @@ function DevPage() {
   const [projectDesc, setProjectDesc] = useState("");
   const [projectDue, setProjectDue] = useState("");
 
-
-
   // Filter open Pull Requests
   const openPRs = useMemo(() => {
     return commits?.filter((c) => c.isPR && c.prStatus === "OPEN") || [];
@@ -162,8 +178,7 @@ function DevPage() {
     return sprints?.find((s) => s.status === "ACTIVE") || null;
   }, [sprints]);
 
-  // Real per-task progress updates across the active sprint (for the feed +
-  // task detail dialog)
+  // Real per-task progress updates across the active sprint
   const { data: sprintTaskUpdates, isLoading: sprintUpdatesLoading } =
     useSprintTaskUpdates(activeSprint?.id);
 
@@ -174,7 +189,7 @@ function DevPage() {
   // Sprint stats
   const sprintStats = useMemo(() => {
     if (!activeSprint) return { totalTasks: 0, completedTasks: 0, totalSP: 0, completedSP: 0 };
-    const sprintTasks = tasks?.filter((t) => t.sprintId === activeSprint.id) || [];
+    const sprintTasks = filteredTasks.filter((t) => t.sprintId === activeSprint.id);
     const completed = sprintTasks.filter((t) => t.status === "DONE");
     
     const totalSP = sprintTasks.reduce((acc, t) => acc + (t.storyPoints ?? 0), 0);
@@ -186,7 +201,7 @@ function DevPage() {
       totalSP,
       completedSP,
     };
-  }, [activeSprint, tasks]);
+  }, [activeSprint, filteredTasks]);
 
   // Dev teammates (for assignee lists)
   const devTeammates = useMemo(() => {
@@ -197,12 +212,12 @@ function DevPage() {
   // Filter tasks in active sprint vs backlog
   const sprintTasks = useMemo(() => {
     if (!activeSprint) return [];
-    return tasks?.filter((t) => t.sprintId === activeSprint.id) || [];
-  }, [activeSprint, tasks]);
+    return filteredTasks.filter((t) => t.sprintId === activeSprint.id);
+  }, [activeSprint, filteredTasks]);
 
   const backlogTasks = useMemo(() => {
-    return tasks?.filter((t) => t.sprintId === null) || [];
-  }, [tasks]);
+    return filteredTasks.filter((t) => t.sprintId === null);
+  }, [filteredTasks]);
 
   // Group activities by date for Daily Updates
   const dailyUpdates = useMemo(() => {
@@ -248,11 +263,13 @@ function DevPage() {
         startDate: sprintStart,
         endDate: sprintEnd,
         status: "ACTIVE", // Automatically start the created sprint
+        projectId: sprintProjectId !== "none" ? sprintProjectId : undefined,
       });
       setCreateSprintOpen(false);
       setSprintName("");
       setSprintStart("");
       setSprintEnd("");
+      setSprintProjectId("none");
     } catch (err) {
       console.error(err);
     }
@@ -416,6 +433,17 @@ function DevPage() {
     }
   };
 
+  if (selectedTaskId) {
+    return (
+      <div className="p-6 max-w-7xl mx-auto space-y-4">
+        <ZohoTaskPagePanel
+          taskId={selectedTaskId}
+          onClose={() => setSelectedTaskId(null)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
       {/* Top Header */}
@@ -426,7 +454,26 @@ function DevPage() {
             Agile sprints, backlog planning, and developer code commit feed.
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Project Scope Filter */}
+          <div className="flex items-center gap-1.5 bg-panel border border-border px-3 py-1 rounded-lg">
+            <Folder className="size-3.5 text-primary" />
+            <span className="text-xs text-text-dim font-medium">Project:</span>
+            <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
+              <SelectTrigger className="h-7 w-[180px] text-xs border-0 bg-transparent focus:ring-0 p-0 font-semibold text-text">
+                <SelectValue placeholder="All Projects" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL_PROJECTS">All Projects (Global)</SelectItem>
+                {(projects ?? []).map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           {currentUser && !currentUserFull?.githubUsername && (
             <Button onClick={() => { setGithubUsernameInput(""); setGithubDialogOpen(true); }} variant="outline" size="sm" className="gap-1.5 text-xs text-warning border-warning/30 hover:bg-warning/10">
               <AlertCircle className="size-3.5" />
@@ -706,10 +753,7 @@ function DevPage() {
                         columnTasks.map((task) => (
                           <div
                             key={task.id}
-                            onClick={() => {
-                              setSelectedTask(task);
-                              setTaskDialogOpen(true);
-                            }}
+                            onClick={() => setSelectedTaskId(task.id)}
                             className="bg-panel border border-border hover:border-primary/40 rounded-lg p-3 space-y-2.5 shadow-sm transition-all cursor-pointer"
                           >
                             <div className="flex items-start justify-between gap-1.5">
@@ -1224,6 +1268,22 @@ function DevPage() {
                   required
                 />
               </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Associated Project</Label>
+              <Select value={sprintProjectId} onValueChange={setSprintProjectId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Project (Optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No Specific Project (Global)</SelectItem>
+                  {(projects ?? []).map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => setCreateSprintOpen(false)}>

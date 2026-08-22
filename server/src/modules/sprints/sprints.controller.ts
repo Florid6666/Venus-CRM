@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post } from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Post, Query } from "@nestjs/common";
 import { SprintsService } from "./sprints.service";
 import { CreateSprintDto } from "./dto/create-sprint.dto";
 import { UpdateSprintDto } from "./dto/update-sprint.dto";
@@ -11,8 +11,11 @@ export class SprintsController {
   constructor(private readonly sprintsService: SprintsService) {}
 
   @Get()
-  findAll(@CurrentUser() user: RequestUser) {
-    return this.sprintsService.findAll(user);
+  findAll(
+    @CurrentUser() user: RequestUser,
+    @Query("projectId") projectId?: string,
+  ) {
+    return this.sprintsService.findAll(user, projectId);
   }
 
   @Get(":id")

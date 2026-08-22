@@ -633,6 +633,8 @@ export interface Sprint {
   startDate: string;
   endDate: string;
   status: "PLANNING" | "ACTIVE" | "COMPLETED";
+  projectId?: string | null;
+  project?: { id: string; name: string } | null;
   departmentId: string;
   tasks: Task[];
   createdAt: string;

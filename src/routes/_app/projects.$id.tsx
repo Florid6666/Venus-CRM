@@ -12,7 +12,7 @@ import {
 } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { ArrowLeft, ListPlus, MessageSquareText, Plus, X } from "lucide-react";
+import { ArrowLeft, Code2, ListPlus, MessageSquareText, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -231,10 +231,18 @@ function ProjectDetailPage() {
             </div>
           )}
         </div>
-        <Button onClick={openCreate}>
-          <Plus className="size-4" />
-          New Task
-        </Button>
+        <div className="flex gap-2">
+          <Link to="/dev">
+            <Button variant="outline" className="gap-1.5 text-xs font-semibold">
+              <Code2 className="size-4 text-primary" />
+              Dev Sprints
+            </Button>
+          </Link>
+          <Button onClick={openCreate}>
+            <Plus className="size-4" />
+            New Task
+          </Button>
+        </div>
       </div>
 
       <TaskListsBar projectId={project.id} taskLists={project.taskLists} />

@@ -7,10 +7,10 @@ import {
   type CreateSprintInput,
 } from "@/lib/api/sprints";
 
-export function useSprints(enabled = true) {
+export function useSprints(projectId?: string, enabled = true) {
   return useQuery({
-    queryKey: ["sprints"],
-    queryFn: listSprints,
+    queryKey: ["sprints", { projectId }],
+    queryFn: () => listSprints(projectId),
     enabled,
   });
 }

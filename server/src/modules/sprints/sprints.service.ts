@@ -9,7 +9,7 @@ import type { RequestUser } from "../../common/types/request-user.type";
 export class SprintsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(user: RequestUser) {
+  async findAll(user: RequestUser, projectId?: string) {
     const isAdmin = user.role.name === RoleName.ADMIN;
     const departmentId = user.department?.id;
 
@@ -17,12 +17,19 @@ export class SprintsService {
       return [];
     }
 
+    const where: Record<string, unknown> = isAdmin ? {} : { departmentId };
+    if (projectId) {
+      where.projectId = projectId;
+    }
+
     return this.prisma.sprint.findMany({
-      where: isAdmin ? {} : { departmentId },
+      where,
       include: {
+        project: { select: { id: true, name: true } },
         tasks: {
           include: {
             assignee: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+            project: { select: { id: true, name: true } },
           },
         },
       },
@@ -34,9 +41,11 @@ export class SprintsService {
     const sprint = await this.prisma.sprint.findUnique({
       where: { id },
       include: {
+        project: { select: { id: true, name: true } },
         tasks: {
           include: {
             assignee: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+            project: { select: { id: true, name: true } },
           },
         },
       },
@@ -80,9 +89,13 @@ export class SprintsService {
         startDate: new Date(dto.startDate),
         endDate: new Date(dto.endDate),
         status: dto.status,
+        projectId: dto.projectId || null,
         departmentId,
       },
-      include: { tasks: true },
+      include: {
+        project: { select: { id: true, name: true } },
+        tasks: true,
+      },
     });
   }
 
@@ -106,8 +119,12 @@ export class SprintsService {
         startDate: dto.startDate ? new Date(dto.startDate) : undefined,
         endDate: dto.endDate ? new Date(dto.endDate) : undefined,
         status: dto.status,
+        projectId: dto.projectId !== undefined ? (dto.projectId || null) : undefined,
       },
-      include: { tasks: true },
+      include: {
+        project: { select: { id: true, name: true } },
+        tasks: true,
+      },
     });
   }
 
