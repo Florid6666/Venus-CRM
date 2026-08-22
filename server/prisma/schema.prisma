@@ -57,6 +57,9 @@ model User {
   kbArticles          KBArticle[]          @relation("KBArticleAuthor")
   gitCommits          GitCommit[]          @relation("CommitAuthor")
   seoContentBriefs    SeoContentBrief[]    @relation("BriefAssignee")
+  reviewedBriefs      SeoContentBrief[]    @relation("BriefReviewer")
+  loggedBacklinks     SeoBacklink[]        @relation("BacklinkLogger")
+  verifiedBacklinks   SeoBacklink[]        @relation("BacklinkVerifier")
   memberOfProjects    Project[]            @relation("ProjectMembers")
   ownedJobPostings    JobPosting[]         @relation("JobPostingOwner")
   ownedCandidates     Candidate[]          @relation("CandidateOwner")
@@ -337,6 +340,8 @@ model Department {
   seoBacklinks          SeoBacklink[]
   seoContentBriefs      SeoContentBrief[]
   seoCompetitors        SeoCompetitor[]
+  seoKpiGoals           SeoKpiGoal[]
+  marketingCampaigns    MarketingCampaign[]
   jobPostings           JobPosting[]      @relation("JobPostingOwningDepartment")
   hiringJobPostings     JobPosting[]      @relation("JobPostingHiringDepartment")
   candidates            Candidate[]
@@ -436,6 +441,10 @@ model Project {
   projectPassword String?
   members         User[]        @relation("ProjectMembers")
   seoKeywords     SeoKeyword[]
+  seoContentBriefs SeoContentBrief[]
+  seoBacklinks    SeoBacklink[]
+  seoKpiGoals     SeoKpiGoal[]
+  marketingCampaigns MarketingCampaign[]
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 }
@@ -513,6 +522,8 @@ model Task {
   epic               Epic?        @relation(fields: [epicId], references: [id], onDelete: SetNull)
   releaseId          String?
   release            Release?     @relation(fields: [releaseId], references: [id], onDelete: SetNull)
+  campaignId         String?
+  campaign           MarketingCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
   commits            GitCommit[]  @relation("TaskCommits")
   parentId           String?
   parent             Task?        @relation("TaskSubtasks", fields: [parentId], references: [id], onDelete: Cascade)
@@ -956,70 +967,152 @@ model GitCommit {
   createdAt   DateTime @default(now())
 }
 
+enum ContentBriefStatus {
+  DRAFT
+  ASSIGNED
+  IN_PROGRESS
+  UNDER_REVIEW
+  REVISION_REQUIRED
+  APPROVED
+  PUBLISHED
+}
+
+enum BacklinkVerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  LOST
+}
+
+enum SlaStatus {
+  ON_TRACK
+  AT_RISK
+  OVERDUE
+}
+
+model MarketingCampaign {
+  id           String            @id @default(uuid())
+  name         String
+  description  String?
+  startDate    DateTime
+  endDate      DateTime?
+  budget       Float?            @default(0)
+  spent        Float?            @default(0)
+  targetLeads  Int?              @default(0)
+  status       String            @default("ACTIVE")
+  projectId    String?
+  project      Project?          @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  departmentId String
+  department   Department        @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  keywords     SeoKeyword[]
+  briefs       SeoContentBrief[]
+  tasks        Task[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+}
+
 model SeoKeyword {
-  id           String     @id @default(uuid())
+  id           String             @id @default(uuid())
   term         String
-  volume       Int        @default(0)
-  difficulty   Int        @default(0)
+  searchIntent String?            @default("INFORMATIONAL")
+  volume       Int                @default(0)
+  difficulty   Int                @default(0)
   currentRank  Int?
   targetRank   Int?
   url          String?
   projectId    String?
-  project      Project?   @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  project      Project?           @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  campaignId   String?
+  campaign     MarketingCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
   departmentId String
-  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  leads        Deal[]     @relation("SeoSourceDeals")
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  department   Department         @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  leads        Deal[]             @relation("SeoSourceDeals")
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
 }
 
 model SeoAudit {
   id           String     @id @default(uuid())
   url          String
   score        Int        @default(0)
-  issues       String // JSON string of issues
+  issues       String
   departmentId String
   department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
   runAt        DateTime   @default(now())
 }
 
-enum BacklinkStatus {
-  ACTIVE
-  LOST
-}
-
 model SeoBacklink {
-  id              String         @id @default(uuid())
+  id              String                     @id @default(uuid())
   sourceUrl       String
   targetUrl       String
-  domainAuthority Int            @default(0)
-  status          BacklinkStatus @default(ACTIVE)
+  anchorText      String?
+  domainAuthority Int                        @default(0)
+  spamScore       Int                        @default(0)
+  linkType        String                     @default("DOFOLLOW")
+  status          BacklinkVerificationStatus @default(PENDING)
+  loggedById      String?
+  loggedBy        User?                      @relation("BacklinkLogger", fields: [loggedById], references: [id], onDelete: SetNull)
+  verifiedById    String?
+  verifiedBy      User?                      @relation("BacklinkVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+  rejectionNote   String?
+  projectId       String?
+  project         Project?                   @relation(fields: [projectId], references: [id], onDelete: SetNull)
   departmentId    String
-  department      Department     @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-}
-
-enum ContentBriefStatus {
-  DRAFT
-  IN_PROGRESS
-  REVIEW
-  PUBLISHED
+  department      Department                 @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @updatedAt
 }
 
 model SeoContentBrief {
-  id            String             @id @default(uuid())
-  title         String
-  targetKeyword String
-  status        ContentBriefStatus @default(DRAFT)
-  dueDate       DateTime?
-  assigneeId    String?
-  assignee      User?              @relation("BriefAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
-  content       String?
-  departmentId  String
-  department    Department         @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+  id                String                    @id @default(uuid())
+  title             String
+  targetKeyword     String
+  secondaryKeywords String[]                  @default([])
+  targetWordCount   Int                       @default(1500)
+  outlineJson       String?
+  status            ContentBriefStatus        @default(DRAFT)
+  slaStatus         SlaStatus                 @default(ON_TRACK)
+  dueDate           DateTime?
+  publishDate       DateTime?
+  projectId         String?
+  project           Project?                  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  campaignId        String?
+  campaign          MarketingCampaign?        @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  assigneeId        String?
+  assignee          User?                     @relation("BriefAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  reviewerId        String?
+  reviewer          User?                     @relation("BriefReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+  content           String?
+  rejectionReason   String?
+  performance       ContentPerformanceMetric?
+  qaChecklist       ContentBriefQaCheck[]
+  departmentId      String
+  department        Department                @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+}
+
+model ContentBriefQaCheck {
+  id           String          @id @default(uuid())
+  briefId      String
+  brief        SeoContentBrief @relation(fields: [briefId], references: [id], onDelete: Cascade)
+  checkItem    String
+  isPassed     Boolean         @default(false)
+  verifiedById String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+}
+
+model ContentPerformanceMetric {
+  id              String          @id @default(uuid())
+  briefId         String          @unique
+  brief           SeoContentBrief @relation(fields: [briefId], references: [id], onDelete: Cascade)
+  pageViews       Int             @default(0)
+  uniqueVisitors  Int             @default(0)
+  ctr             Float           @default(0.0)
+  rankingPosition Int?
+  leadsGenerated  Int             @default(0)
+  updatedAt       DateTime        @updatedAt
 }
 
 model SeoCompetitor {
@@ -1027,6 +1120,22 @@ model SeoCompetitor {
   domain       String
   da           Int        @default(0)
   traffic      Int        @default(0)
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model SeoKpiGoal {
+  id           String     @id @default(uuid())
+  title        String
+  metricType   String
+  targetValue  Float
+  currentValue Float      @default(0.0)
+  startDate    DateTime
+  endDate      DateTime
+  projectId    String?
+  project      Project?   @relation(fields: [projectId], references: [id], onDelete: SetNull)
   departmentId String
   department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
   createdAt    DateTime   @default(now())

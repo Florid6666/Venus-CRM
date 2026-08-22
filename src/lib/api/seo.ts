@@ -4,12 +4,14 @@ import { UserSummary, Department } from "./types";
 export interface SeoKeyword {
   id: string;
   term: string;
+  searchIntent?: string | null;
   volume: number;
   difficulty: number;
   currentRank: number | null;
   targetRank: number | null;
   url: string | null;
   projectId: string | null;
+  campaignId?: string | null;
   departmentId: string;
   department?: Department;
   createdAt: string;
@@ -36,33 +38,111 @@ export interface SeoAudit {
   runAt: string;
 }
 
-export type BacklinkStatus = "ACTIVE" | "LOST";
+export type BacklinkVerificationStatus = "PENDING" | "VERIFIED" | "REJECTED" | "LOST";
 
 export interface SeoBacklink {
   id: string;
   sourceUrl: string;
   targetUrl: string;
+  anchorText?: string | null;
   domainAuthority: number;
-  status: BacklinkStatus;
+  spamScore?: number;
+  linkType?: string;
+  status: BacklinkVerificationStatus;
+  loggedById?: string | null;
+  loggedBy?: UserSummary | null;
+  verifiedById?: string | null;
+  verifiedBy?: UserSummary | null;
+  rejectionNote?: string | null;
+  projectId?: string | null;
   departmentId: string;
   department?: Department;
   createdAt: string;
   updatedAt: string;
 }
 
-export type ContentBriefStatus = "DRAFT" | "IN_PROGRESS" | "REVIEW" | "PUBLISHED";
+export type ContentBriefStatus =
+  | "DRAFT"
+  | "ASSIGNED"
+  | "IN_PROGRESS"
+  | "UNDER_REVIEW"
+  | "REVISION_REQUIRED"
+  | "APPROVED"
+  | "PUBLISHED";
+
+export type SlaStatus = "ON_TRACK" | "AT_RISK" | "OVERDUE";
+
+export interface ContentBriefQaCheck {
+  id: string;
+  briefId: string;
+  checkItem: string;
+  isPassed: boolean;
+  verifiedById?: string | null;
+}
+
+export interface ContentPerformanceMetric {
+  id: string;
+  briefId: string;
+  pageViews: number;
+  uniqueVisitors: number;
+  ctr: number;
+  rankingPosition?: number | null;
+  leadsGenerated: number;
+}
 
 export interface SeoContentBrief {
   id: string;
   title: string;
   targetKeyword: string;
+  secondaryKeywords?: string[];
+  targetWordCount?: number;
+  outlineJson?: string | null;
   status: ContentBriefStatus;
+  slaStatus?: SlaStatus;
   dueDate: string | null;
+  publishDate?: string | null;
+  projectId?: string | null;
+  campaignId?: string | null;
   assigneeId: string | null;
   assignee?: UserSummary;
+  reviewerId?: string | null;
+  reviewer?: UserSummary;
   content: string | null;
+  rejectionReason?: string | null;
+  qaChecklist?: ContentBriefQaCheck[];
+  performance?: ContentPerformanceMetric | null;
   departmentId: string;
   department?: Department;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MarketingCampaign {
+  id: string;
+  name: string;
+  description?: string | null;
+  startDate: string;
+  endDate?: string | null;
+  budget?: number;
+  spent?: number;
+  targetLeads?: number;
+  status: string;
+  projectId?: string | null;
+  departmentId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SeoKpiGoal {
+  id: string;
+  title: string;
+  metricType: string;
+  targetValue: number;
+  currentValue: number;
+  startDate: string;
+  endDate: string;
+  projectId?: string | null;
+  departmentId: string;
   createdAt: string;
   updatedAt: string;
 }
