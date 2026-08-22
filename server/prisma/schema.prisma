@@ -1,0 +1,1495 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum RoleName {
+  ADMIN
+  MANAGER
+  EMPLOYEE
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        RoleName @unique
+  description String?
+  users       User[]
+  createdAt   DateTime @default(now())
+}
+
+model User {
+  id             String  @id @default(uuid())
+  email          String  @unique
+  passwordHash   String
+  firstName      String
+  lastName       String
+  avatarUrl      String?
+  githubUsername String? @unique
+  isActive       Boolean @default(true)
+  roleId         String
+  role           Role    @relation(fields: [roleId], references: [id])
+
+  departmentId  String?
+  department    Department? @relation("DepartmentEmployees", fields: [departmentId], references: [id], onDelete: SetNull)
+  // Current monthly $ target for this individual, same pragmatic single-value
+  // style as Department.monthlyTarget.
+  monthlyTarget Int?
+  managerId     String?
+  manager       User?       @relation("UserManager", fields: [managerId], references: [id], onDelete: SetNull)
+  reports       User[]      @relation("UserManager")
+
+  headOfDepartments Department[] @relation("DepartmentHead")
+
+  refreshTokens       RefreshToken[]
+  passwordResetTokens PasswordResetToken[]
+  assignedTasks       Task[]               @relation("TaskAssignee")
+  createdTasks        Task[]               @relation("TaskCreator")
+  ownedProjects       Project[]            @relation("ProjectOwner")
+  ownedDeals          Deal[]               @relation("DealOwner")
+  loggedActivities    Activity[]           @relation("ActivityCreator")
+  sentMessages        ChatMessage[]        @relation("MessageSender")
+  dmChannels1         ChatChannel[]        @relation("dmUser1")
+  dmChannels2         ChatChannel[]        @relation("dmUser2")
+  kbArticles          KBArticle[]          @relation("KBArticleAuthor")
+  gitCommits          GitCommit[]          @relation("CommitAuthor")
+  seoContentBriefs    SeoContentBrief[]    @relation("BriefAssignee")
+  memberOfProjects    Project[]            @relation("ProjectMembers")
+  ownedJobPostings    JobPosting[]         @relation("JobPostingOwner")
+  ownedCandidates     Candidate[]          @relation("CandidateOwner")
+  interviewsConducted Interview[]          @relation("InterviewInterviewer")
+  interviewsCreated   Interview[]          @relation("InterviewCreator")
+  offersCreated       Offer[]              @relation("OfferCreator")
+  leaveRequests       LeaveRequest[]       @relation("UserLeaveRequests")
+  reviewedLeaves      LeaveRequest[]       @relation("LeaveReviewer")
+  notifications       Notification[]       @relation("UserNotifications")
+  workSessions        WorkSession[]        @relation("UserWorkSessions")
+  taskUpdates         TaskUpdate[]         @relation("TaskUpdateAuthor")
+  timeLogs            TimeLog[]            @relation("TaskTimeLogAuthor")
+  timeLogsReviewed    TimeLog[]            @relation("TimeLogReviewer")
+  apolloConnections   ApolloConnection[]
+  emailTemplates      EmailTemplate[]
+  createdSequences    Sequence[]
+  sequenceEnrollments SequenceEnrollment[]
+  bulkEmailCampaigns  BulkEmailCampaign[]
+  contactImportBatches ContactImportBatch[]
+  emailConnection     UserEmailConnection?
+  loginEvents         LoginEvent[]         @relation("UserLoginEvents")
+  screenCaptures      ScreenCapture[]      @relation("UserScreenCaptures")
+  screenRecordings    ScreenRecording[]    @relation("UserScreenRecordings")
+  activityPings       ActivityPing[]       @relation("UserActivityPings")
+  chatChannelReads    ChatChannelRead[]
+  loginPhotos         LoginPhoto[]         @relation("UserLoginPhotos")
+  trainingVideos      TrainingVideo[]      @relation("TrainingVideoUploader")
+  dealDocuments       DealDocument[]       @relation("DealDocumentUploader")
+  signatureImages     EmailSignatureImage[] @relation("SignatureImageOwner")
+  taskAssignees       TaskAssignee[]       @relation("TaskAssigneeUser")
+  testedTasks         Task[]               @relation("TaskTester")
+  reportedBugs        Bug[]                @relation("BugReporter")
+  assignedBugs        Bug[]                @relation("BugAssignee")
+  bugComments         BugComment[]         @relation("BugCommentAuthor")
+  bugActivityLogs     BugActivityLog[]     @relation("BugActivityAuthor")
+  taskActivityLogs    TaskActivityLog[]    @relation("TaskActivityAuthor")
+
+  // HTML appended to outbound email when the sender inserts their signature.
+  // Stored per user rather than per template so one rep's sign-off follows
+  // them across every template and one-off send.
+  emailSignatureHtml String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum LeaveType {
+  ANNUAL
+  SICK
+  CASUAL
+  UNPAID
+  MATERNITY_PATERNITY
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+// Leave request submitted by an employee. HR/Admin can approve or reject.
+// Dates are stored as DateTime but treated as date-only (time component
+// is midnight UTC) -- consistent with the pragmatic style of this schema.
+model LeaveRequest {
+  id           String      @id @default(uuid())
+  userId       String
+  user         User        @relation("UserLeaveRequests", fields: [userId], references: [id], onDelete: Cascade)
+  type         LeaveType
+  status       LeaveStatus @default(PENDING)
+  startDate    DateTime
+  endDate      DateTime
+  reason       String?
+  // HR/Manager who approved or rejected the request
+  reviewedById String?
+  reviewedBy   User?       @relation("LeaveReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewNote   String?
+  reviewedAt   DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+// ─── Notifications ───────────────────────────────────────────────────────────
+
+enum NotificationType {
+  LEAVE_APPROVED
+  LEAVE_REJECTED
+  TASK_ASSIGNED
+  TASK_UPDATED
+  BUG_ASSIGNED
+  BUG_FIXED
+  BUG_REOPENED
+  GENERAL
+}
+
+// Per-user in-app notification. Created by server-side event triggers
+// (e.g. LeaveRequestsService, TasksService). Never mutated after creation
+// except to mark isRead.
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  user      User             @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  // Client-side route the user should navigate to on click, e.g. "/hr" or "/tasks"
+  link      String?
+  createdAt DateTime         @default(now())
+}
+
+// ─── Work Sessions (Attendance) ──────────────────────────────────────────────
+
+// Records a single work session started by the user clicking "Go Online".
+// clockOutAt is null while the session is active. Duration is computed
+// on clock-out as (clockOutAt - clockInAt) in minutes -- night-shift
+// sessions (e.g. 7 PM → 4 AM next day) are handled correctly since
+// we never assume clock-in and clock-out are on the same calendar date.
+model WorkSession {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation("UserWorkSessions", fields: [userId], references: [id], onDelete: Cascade)
+  clockInAt   DateTime
+  clockOutAt  DateTime?
+  // Computed on clock-out, stored for easy reporting without re-calculating
+  durationMin Int?
+  // Calendar date of clock-in (for grouping daily summaries)
+  date        DateTime
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  screenCaptures   ScreenCapture[]
+  screenRecordings ScreenRecording[]
+  activityPings    ActivityPing[]
+}
+
+// ─── Screen monitoring (disclosed) ───────────────────────────────────────────
+
+// Periodic desktop screenshots captured by the desktop agent while a user is
+// clocked in. Viewable by Admin, HR, or the capturing user's own-department
+// Manager (see canViewScreenCaptures) -- never by the user themselves in this
+// first pass. Images live on disk (see ScreenshotStorageService), not in the
+// DB -- storagePath is just a pointer, cleaned up by the same 30-day
+// opportunistic retention sweep pattern used for LoginEvent.
+// A short screen recording captured by the desktop agent while an employee is
+// clocked in -- three 3-minute clips an hour (at :00, :20, :40), so a 9-hour
+// day produces 27. Replaces the periodic still screenshots: same disclosure,
+// same clocked-in gate, same viewer rules as ScreenCapture.
+//
+// Video is far heavier than stills, so retention is deliberately much shorter
+// here (see RETENTION_MS in screen-recordings.service.ts) and the files live on
+// the mounted volume, never in the database.
+model ScreenRecording {
+  id            String       @id @default(uuid())
+  userId        String
+  user          User         @relation("UserScreenRecordings", fields: [userId], references: [id], onDelete: Cascade)
+  workSessionId String?
+  workSession   WorkSession? @relation(fields: [workSessionId], references: [id], onDelete: SetNull)
+  storagePath   String
+  mimeType      String
+  sizeBytes     Int
+  // Actual clip length; normally 180s but a clock-out mid-clip cuts it short.
+  durationSec   Int
+  startedAt     DateTime     @default(now())
+  createdAt     DateTime     @default(now())
+
+  @@index([userId, startedAt])
+  @@index([startedAt])
+}
+
+model ScreenCapture {
+  id            String       @id @default(uuid())
+  userId        String
+  user          User         @relation("UserScreenCaptures", fields: [userId], references: [id], onDelete: Cascade)
+  workSessionId String?
+  workSession   WorkSession? @relation(fields: [workSessionId], references: [id], onDelete: SetNull)
+  storagePath   String
+  capturedAt    DateTime     @default(now())
+  createdAt     DateTime     @default(now())
+
+  @@index([userId, capturedAt])
+  @@index([capturedAt])
+}
+
+// A periodic "was there real mouse/keyboard input recently" ping from the
+// desktop agent while clocked in -- an active/idle signal only, never what
+// was typed or clicked. idleSeconds comes straight from the OS
+// (Electron's powerMonitor.getSystemIdleTime()), which reports seconds since
+// the last input system-wide without the app ever seeing individual key or
+// click events. `active` is idleSeconds below a threshold, computed once at
+// write time so aggregation queries don't need to re-derive it. Same
+// viewer/retention model as ScreenCapture.
+model ActivityPing {
+  id            String       @id @default(uuid())
+  userId        String
+  user          User         @relation("UserActivityPings", fields: [userId], references: [id], onDelete: Cascade)
+  workSessionId String?
+  workSession   WorkSession? @relation(fields: [workSessionId], references: [id], onDelete: SetNull)
+  idleSeconds   Int
+  active        Boolean
+  capturedAt    DateTime     @default(now())
+
+  @@index([userId, capturedAt])
+  @@index([capturedAt])
+}
+
+// ─── Login / logout audit trail ──────────────────────────────────────────────
+
+// Audit trail of sign-in / sign-out events, surfaced to Admin + HR so they can
+// see who accessed the system and when. One row per LOGIN or LOGOUT.
+enum AuthEventType {
+  LOGIN
+  LOGOUT
+}
+
+model LoginEvent {
+  id        String        @id @default(uuid())
+  userId    String
+  user      User          @relation("UserLoginEvents", fields: [userId], references: [id], onDelete: Cascade)
+  type      AuthEventType
+  // Best-effort request metadata (client IP + browser/device string). Nullable
+  // because a logout may arrive without a resolvable session and headers can be
+  // absent behind proxies.
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime      @default(now())
+
+  @@index([userId, createdAt])
+  @@index([createdAt])
+  loginPhotos LoginPhoto[]
+}
+
+// Disclosed webcam photo captured at the moment of login (see PROJECT_STATUS.md
+// phase 12) -- best-effort, never blocks sign-in. Same viewing audience as
+// ScreenCapture (canViewMonitoringData): Admin, HR, or the employee's own-
+// department Manager. loginEventId is a best-effort cross-reference to the
+// audit trail, not a hard requirement -- a photo can exist without a
+// resolvable event.
+model LoginPhoto {
+  id           String      @id @default(uuid())
+  userId       String
+  user         User        @relation("UserLoginPhotos", fields: [userId], references: [id], onDelete: Cascade)
+  loginEventId String?
+  loginEvent   LoginEvent? @relation(fields: [loginEventId], references: [id], onDelete: SetNull)
+  storagePath  String
+  capturedAt   DateTime    @default(now())
+  createdAt    DateTime    @default(now())
+
+  @@index([userId, capturedAt])
+  @@index([capturedAt])
+}
+
+model Department {
+  id                    String            @id @default(uuid())
+  name                  String            @unique
+  description           String?
+  // Display title for this department's MANAGER-tier role, e.g. "Head" for Dev
+  // instead of the default "Manager" -- purely cosmetic, not a permission tier.
+  managerTitle          String            @default("Manager")
+  // Current monthly $ target for this department, shown as actual-vs-target on
+  // the Team Performance view. Null = no target set. Single current value, no
+  // history -- matches this schema's pragmatic style (see Deal.value).
+  monthlyTarget         Int?
+  dealApprovalThreshold Int               @default(10000)
+  headId                String?
+  head                  User?             @relation("DepartmentHead", fields: [headId], references: [id], onDelete: SetNull)
+  employees             User[]            @relation("DepartmentEmployees")
+  projects              Project[]
+  tasks                 Task[]
+  deals                 Deal[]
+  chatChannels          ChatChannel[]
+  kbArticles            KBArticle[]
+  sprints               Sprint[]
+  epics                 Epic[]
+  releases              Release[]
+  seoKeywords           SeoKeyword[]
+  seoAudits             SeoAudit[]
+  seoBacklinks          SeoBacklink[]
+  seoContentBriefs      SeoContentBrief[]
+  seoCompetitors        SeoCompetitor[]
+  jobPostings           JobPosting[]      @relation("JobPostingOwningDepartment")
+  hiringJobPostings     JobPosting[]      @relation("JobPostingHiringDepartment")
+  candidates            Candidate[]
+  interviews            Interview[]
+  offers                Offer[]
+  emailTemplates        EmailTemplate[]
+  sequences             Sequence[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum EpicStatus {
+  PLANNING
+  IN_PROGRESS
+  COMPLETED
+}
+
+model Epic {
+  id           String     @id @default(uuid())
+  name         String
+  description  String?
+  status       EpicStatus @default(PLANNING)
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  tasks        Task[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+enum ReleaseStatus {
+  PLANNED
+  RELEASED
+  FAILED
+}
+
+model Release {
+  id           String        @id @default(uuid())
+  versionName  String
+  releaseDate  DateTime?
+  status       ReleaseStatus @default(PLANNED)
+  departmentId String
+  department   Department    @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  tasks        Task[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+}
+
+// Single-use, time-limited token for the emailed password-reset flow. The raw
+// token is emailed in the reset link; only its SHA-256 hash is stored here
+// (same approach as RefreshToken).
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  tokenHash String    @unique
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+enum ProjectStatus {
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  ARCHIVED
+}
+
+model Project {
+  id              String        @id @default(uuid())
+  name            String
+  description     String?
+  status          ProjectStatus @default(ACTIVE)
+  ownerId         String
+  owner           User          @relation("ProjectOwner", fields: [ownerId], references: [id])
+  tasks           Task[]
+  taskLists       TaskList[]
+  startDate       DateTime?
+  dueDate         DateTime?
+  // Which department's work this belongs to -- drives department-scoped Manager
+  // permissions (see DepartmentsService/ProjectsService.assertCanMutate). Null
+  // (legacy rows, or explicitly unscoped) is manageable by any Manager.
+  departmentId    String?
+  department      Department?   @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  githubUrl       String?
+  projectPassword String?
+  members         User[]        @relation("ProjectMembers")
+  seoKeywords     SeoKeyword[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+// A named grouping of tasks within a project (e.g. "Backend", "Design",
+// "General") -- purely organizational, mirrors Zoho Projects' "task lists."
+// Deleting a list doesn't delete its tasks (SetNull on Task.taskListId) --
+// only deleting the whole project does, via this relation's Cascade.
+model TaskList {
+  id        String   @id @default(uuid())
+  name      String
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  position  Int      @default(0)
+  tasks     Task[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  IN_REVIEW
+  READY_FOR_TESTING
+  CHANGES_REQUIRED
+  DONE
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+model TaskAssignee {
+  id         String   @id @default(uuid())
+  taskId     String
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation("TaskAssigneeUser", fields: [userId], references: [id], onDelete: Cascade)
+  assignedAt DateTime @default(now())
+
+  @@unique([taskId, userId])
+}
+
+model Task {
+  id                 String       @id @default(uuid())
+  taskNumber         Int          @default(autoincrement())
+  title              String
+  description        String?
+  status             TaskStatus   @default(TODO)
+  priority           TaskPriority @default(MEDIUM)
+  position           Int          @default(0)
+  projectId          String?
+  project            Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  assigneeId         String?
+  assignee           User?        @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  assignees          TaskAssignee[]
+  testerId           String?
+  tester             User?        @relation("TaskTester", fields: [testerId], references: [id], onDelete: SetNull)
+  testingNotes       String?
+  testingCompletedAt DateTime?
+  testingApproved    Boolean      @default(false)
+  creatorId          String
+  creator            User         @relation("TaskCreator", fields: [creatorId], references: [id])
+  dueDate            DateTime?
+  departmentId       String?
+  department         Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  storyPoints        Int?
+  type               TaskType     @default(FEATURE)
+  sprintId           String?
+  sprint             Sprint?      @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+  epicId             String?
+  epic               Epic?        @relation(fields: [epicId], references: [id], onDelete: SetNull)
+  releaseId          String?
+  release            Release?     @relation(fields: [releaseId], references: [id], onDelete: SetNull)
+  commits            GitCommit[]  @relation("TaskCommits")
+  parentId           String?
+  parent             Task?        @relation("TaskSubtasks", fields: [parentId], references: [id], onDelete: Cascade)
+  subtasks           Task[]       @relation("TaskSubtasks")
+  updates            TaskUpdate[]
+  taskListId         String?
+  taskList           TaskList?    @relation(fields: [taskListId], references: [id], onDelete: SetNull)
+  startDate          DateTime?
+  tags               String[]     @default([])
+  timeLogs           TimeLog[]
+  bugs               Bug[]
+  activityLogs       TaskActivityLog[]
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+}
+
+enum TimeLogStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model TimeLog {
+  id           String        @id @default(uuid())
+  taskId       String
+  task         Task          @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  subtaskId    String?
+  userId       String
+  user         User          @relation("TaskTimeLogAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  date         DateTime
+  startTime    String?
+  endTime      String?
+  minutes      Int
+  note         String?
+  status       TimeLogStatus @default(PENDING)
+  reviewedById String?
+  reviewedBy   User?         @relation("TimeLogReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  reviewNote   String?
+  reviewedAt   DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([taskId])
+  @@index([userId, date])
+}
+
+model TaskUpdate {
+  id            String   @id @default(uuid())
+  taskId        String
+  task          Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User     @relation("TaskUpdateAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  content       String
+  date          DateTime @default(now())
+  workCompleted String?
+  nextPlan      String?
+  blockers      String?
+  notes         String?
+  attachments   String[] @default([])
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+enum BugSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum BugPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum BugStatus {
+  OPEN
+  ASSIGNED
+  IN_PROGRESS
+  TO_BE_TESTED
+  RETESTING
+  CLOSED
+  REOPENED
+}
+
+model Bug {
+  id           String           @id @default(uuid())
+  bugNumber    Int              @default(autoincrement())
+  title        String
+  description  String?
+  taskId       String
+  task         Task             @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  subtaskId    String?
+  reporterId   String
+  reporter     User             @relation("BugReporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  assigneeId   String?
+  assignee     User?            @relation("BugAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  severity     BugSeverity      @default(MEDIUM)
+  priority     BugPriority      @default(MEDIUM)
+  status       BugStatus        @default(OPEN)
+  attachments  String[]         @default([])
+  comments     BugComment[]
+  activityLogs BugActivityLog[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@index([taskId])
+}
+
+model BugComment {
+  id        String   @id @default(uuid())
+  bugId     String
+  bug       Bug      @relation(fields: [bugId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation("BugCommentAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model BugActivityLog {
+  id        String   @id @default(uuid())
+  bugId     String
+  bug       Bug      @relation(fields: [bugId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation("BugActivityAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
+}
+
+model TaskActivityLog {
+  id        String   @id @default(uuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation("TaskActivityAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
+}
+
+enum LeadSource {
+  MANUAL
+  APOLLO
+  IMPORT
+}
+
+model Company {
+  id            String     @id @default(uuid())
+  name          String     @unique
+  domain        String?
+  industry      String?
+  notes         String?
+  contacts      Contact[]
+  deals         Deal[]
+  // Apollo.io enrichment fields -- apolloId is used to dedupe re-imports.
+  apolloId      String?    @unique
+  linkedinUrl   String?
+  employeeCount Int?
+  source        LeadSource @default(MANUAL)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+model Contact {
+  id          String     @id @default(uuid())
+  firstName   String
+  lastName    String
+  email       String?
+  phone       String?
+  title       String?
+  companyId   String?
+  company     Company?   @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  deals       Deal[]
+  // Apollo.io enrichment fields -- apolloId is used to dedupe re-imports.
+  apolloId    String?    @unique
+  linkedinUrl String?
+  source      LeadSource @default(MANUAL)
+  enrichedAt  DateTime?
+  // Freeform catch-all for anything a spreadsheet import couldn't map to a
+  // real field -- e.g. "Follow UP notes" from a LinkedIn export, or extra
+  // columns the user chose to keep rather than discard.
+  notes       String?
+  // Common spreadsheet-import fields -- all freeform strings rather than
+  // enums since imported values (e.g. priority tiers like "A+"/"B") vary by
+  // source sheet, not a fixed set this app controls.
+  location    String?
+  website     String?
+  category    String?
+  priority    String?
+  enrollments SequenceEnrollment[]
+  bulkEmailRecipients BulkEmailRecipient[]
+  activities          Activity[]           @relation("ActivityContact")
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+// One row per spreadsheet import run -- an audit trail so "did that import
+// actually work" is answerable without grepping logs, same pattern as
+// BulkEmailCampaign. Rows themselves aren't stored here, only the summary;
+// the created/updated Contacts are the actual result.
+model ContactImportBatch {
+  id           String   @id @default(uuid())
+  fileName     String
+  importedById String
+  importedBy   User     @relation(fields: [importedById], references: [id])
+  totalRows    Int
+  createdCount Int
+  updatedCount Int
+  skippedCount Int
+  createdAt    DateTime @default(now())
+}
+
+enum DealStage {
+  NEW_LEAD
+  QUALIFIED
+  MEETING_SCHEDULED
+  PROPOSAL_SENT
+  NEGOTIATION
+  WON
+  LOST
+  ARCHIVED
+}
+
+// PENDING = an Employee tried to close a deal above the approval threshold;
+// the stage change was withheld until a Manager/Admin approves or rejects it
+// (see DealsService.update/approve/reject).
+enum DealApprovalStatus {
+  NONE
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Deal {
+  id                String             @id @default(uuid())
+  title             String
+  // Whole currency units (no cents). Prisma's Decimal type doesn't round-trip
+  // through JSON/TS cleanly; Int matches this codebase's pragmatic style.
+  value             Int                @default(0)
+  stage             DealStage          @default(NEW_LEAD)
+  position          Int                @default(0)
+  companyId         String?
+  company           Company?           @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  contactId         String?
+  contact           Contact?           @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  ownerId           String
+  owner             User               @relation("DealOwner", fields: [ownerId], references: [id])
+  notes             String?
+  expectedCloseDate DateTime?
+  // Same department-scoping purpose as Project.departmentId.
+  departmentId      String?
+  department        Department?        @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  // Set automatically by DealsService when stage transitions to/from WON or
+  // LOST -- unlike updatedAt, which changes on any edit and can't answer
+  // "when did this deal actually close" for dashboard stats.
+  closedAt          DateTime?
+  approvalStatus    DealApprovalStatus @default(NONE)
+  activities        Activity[]
+  documents         DealDocument[]
+
+  seoSourceKeywordId String?
+  seoSourceKeyword   SeoKeyword? @relation("SeoSourceDeals", fields: [seoSourceKeywordId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum ActivityType {
+  CALL
+  MEETING
+  NOTE
+  SYSTEM
+}
+
+// A file attached to a deal -- in practice the proposal PDF that was sent to
+// the customer, prompted for when the deal reaches PROPOSAL_SENT. Kept as a
+// record of exactly what was quoted, so a later dispute has the actual
+// document rather than someone's memory of it.
+//
+// Unlike TrainingVideo (which stores a link), the bytes live on the server's
+// volume: a proposal is small, private to the deal, and shouldn't depend on
+// somebody's personal Drive still sharing it a year later.
+// An image referenced by a user's email signature -- typically a company
+// logo. Served from a PUBLIC endpoint on purpose: the <img> is loaded by the
+// recipient's mail client, which has no session here. The id is a uuid, so
+// the URL is unguessable, and nothing sensitive should ever be uploaded.
+model EmailSignatureImage {
+  id           String   @id @default(uuid())
+  ownerId      String
+  owner        User     @relation("SignatureImageOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  originalName String
+  storagePath  String
+  mimeType     String
+  sizeBytes    Int
+  createdAt    DateTime @default(now())
+
+  @@index([ownerId])
+}
+
+model DealDocument {
+  id           String   @id @default(uuid())
+  dealId       String
+  deal         Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  // Original filename as the uploader had it -- shown in the UI and used for
+  // the download filename. storagePath is the generated name on disk.
+  originalName String
+  storagePath  String
+  mimeType     String
+  sizeBytes    Int
+  note         String?
+  uploaderId   String
+  uploader     User     @relation("DealDocumentUploader", fields: [uploaderId], references: [id])
+  createdAt    DateTime @default(now())
+
+  @@index([dealId, createdAt])
+}
+
+model Activity {
+  id         String       @id @default(uuid())
+  type       ActivityType
+  content    String
+  // Who was actually spoken to. Optional because a NOTE often isn't about one
+  // person, and every SYSTEM row is written by the server with nobody on the
+  // other end. SetNull rather than Cascade: deleting a contact shouldn't erase
+  // the record that the call happened.
+  contactId  String?
+  contact    Contact?     @relation("ActivityContact", fields: [contactId], references: [id], onDelete: SetNull)
+  // Free text rather than an enum -- teams word their call dispositions
+  // differently, and the frontend offers a suggested list without forcing it.
+  outcome    String?
+  // Call/meeting length in minutes. Null for notes and system rows.
+  durationMin Int?
+  occurredAt DateTime     @default(now())
+  dealId     String
+  // Cascade, unlike this schema's usual SetNull for optional FKs: an activity
+  // has no independent meaning without its deal (contrast Task.projectId,
+  // which SetNulls since a task still means something without a project).
+  deal       Deal         @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  creatorId  String
+  creator    User         @relation("ActivityCreator", fields: [creatorId], references: [id])
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+}
+
+model ChatChannel {
+  id           String        @id @default(uuid())
+  name         String? // null for DMs
+  description  String?
+  isDM         Boolean       @default(false)
+  departmentId String?
+  department   Department?   @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  messages     ChatMessage[]
+  reads        ChatChannelRead[]
+  dmUserId1    String?
+  dmUser1      User?         @relation("dmUser1", fields: [dmUserId1], references: [id], onDelete: SetNull)
+  dmUserId2    String?
+  dmUser2      User?         @relation("dmUser2", fields: [dmUserId2], references: [id], onDelete: SetNull)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@unique([dmUserId1, dmUserId2])
+}
+
+// Per-user "I've seen everything up to here" marker for a channel, used to
+// derive the sidebar's real unread-message badge (no unread state existed
+// before this). Upserted whenever the user opens/views a channel.
+model ChatChannelRead {
+  id         String      @id @default(uuid())
+  userId     String
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channelId  String
+  channel    ChatChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  lastReadAt DateTime    @default(now())
+
+  @@unique([userId, channelId])
+}
+
+model ChatMessage {
+  id        String      @id @default(uuid())
+  content   String
+  channelId String
+  channel   ChatChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User        @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  pinnedAt  DateTime?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model KBArticle {
+  id           String      @id @default(uuid())
+  title        String
+  content      String
+  category     String // SOP, FAQ, GUIDE, STANDARD
+  authorId     String
+  author       User        @relation("KBArticleAuthor", fields: [authorId], references: [id])
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+enum TaskType {
+  FEATURE
+  BUG
+  REFACTOR
+  CHORE
+}
+
+model Sprint {
+  id           String     @id @default(uuid())
+  name         String
+  startDate    DateTime
+  endDate      DateTime
+  status       String // PLANNING, ACTIVE, COMPLETED
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  tasks        Task[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model GitCommit {
+  id          String   @id @default(uuid())
+  hash        String   @unique
+  message     String
+  branch      String   @default("main")
+  authorId    String
+  author      User     @relation("CommitAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  taskId      String?
+  task        Task?    @relation("TaskCommits", fields: [taskId], references: [id], onDelete: SetNull)
+  isPR        Boolean  @default(false)
+  prStatus    String? // OPEN, MERGED, CLOSED
+  prNumber    Int?
+  buildStatus String?
+  createdAt   DateTime @default(now())
+}
+
+model SeoKeyword {
+  id           String     @id @default(uuid())
+  term         String
+  volume       Int        @default(0)
+  difficulty   Int        @default(0)
+  currentRank  Int?
+  targetRank   Int?
+  url          String?
+  projectId    String?
+  project      Project?   @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  leads        Deal[]     @relation("SeoSourceDeals")
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+model SeoAudit {
+  id           String     @id @default(uuid())
+  url          String
+  score        Int        @default(0)
+  issues       String // JSON string of issues
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  runAt        DateTime   @default(now())
+}
+
+enum BacklinkStatus {
+  ACTIVE
+  LOST
+}
+
+model SeoBacklink {
+  id              String         @id @default(uuid())
+  sourceUrl       String
+  targetUrl       String
+  domainAuthority Int            @default(0)
+  status          BacklinkStatus @default(ACTIVE)
+  departmentId    String
+  department      Department     @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+enum ContentBriefStatus {
+  DRAFT
+  IN_PROGRESS
+  REVIEW
+  PUBLISHED
+}
+
+model SeoContentBrief {
+  id            String             @id @default(uuid())
+  title         String
+  targetKeyword String
+  status        ContentBriefStatus @default(DRAFT)
+  dueDate       DateTime?
+  assigneeId    String?
+  assignee      User?              @relation("BriefAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  content       String?
+  departmentId  String
+  department    Department         @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+}
+
+model SeoCompetitor {
+  id           String     @id @default(uuid())
+  domain       String
+  da           Int        @default(0)
+  traffic      Int        @default(0)
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+}
+
+enum JobPostingStatus {
+  OPEN
+  ON_HOLD
+  CLOSED
+  FILLED
+}
+
+model JobPosting {
+  id                 String           @id @default(uuid())
+  title              String
+  description        String?
+  location           String?
+  employmentType     EmploymentType   @default(FULL_TIME)
+  status             JobPostingStatus @default(OPEN)
+  // Which team this role is for -- purely descriptive/filterable, no RBAC
+  // implications (contrast departmentId below, which IS the RBAC scope).
+  hiringDepartmentId String?
+  hiringDepartment   Department?      @relation("JobPostingHiringDepartment", fields: [hiringDepartmentId], references: [id], onDelete: SetNull)
+  // Owning department (always Recruitment in practice) -- same
+  // department-scoping convention as Task/Project/Deal: null = legacy/unscoped.
+  departmentId       String?
+  department         Department?      @relation("JobPostingOwningDepartment", fields: [departmentId], references: [id], onDelete: SetNull)
+  ownerId            String
+  owner              User             @relation("JobPostingOwner", fields: [ownerId], references: [id])
+  candidates         Candidate[]
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+}
+
+enum CandidateStage {
+  APPLIED
+  SCREENING
+  INTERVIEW
+  OFFER
+  HIRED
+  REJECTED
+}
+
+model Candidate {
+  id              String         @id @default(uuid())
+  firstName       String
+  lastName        String
+  email           String?
+  phone           String?
+  resumeUrl       String?
+  source          String?
+  stage           CandidateStage @default(APPLIED)
+  position        Int            @default(0)
+  rejectionReason String?
+  jobPostingId    String
+  jobPosting      JobPosting     @relation(fields: [jobPostingId], references: [id], onDelete: Cascade)
+  ownerId         String
+  owner           User           @relation("CandidateOwner", fields: [ownerId], references: [id])
+  departmentId    String?
+  department      Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  interviews      Interview[]
+  offers          Offer[]
+  appliedAt       DateTime       @default(now())
+  // Set when stage transitions to HIRED or REJECTED -- same rationale as
+  // Deal.closedAt (updatedAt changes on any edit and can't answer "when did
+  // this candidate's process actually end" for hiring analytics).
+  closedAt        DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+enum InterviewType {
+  PHONE_SCREEN
+  TECHNICAL
+  BEHAVIORAL
+  ONSITE
+  FINAL
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELED
+  NO_SHOW
+}
+
+model Interview {
+  id              String          @id @default(uuid())
+  candidateId     String
+  candidate       Candidate       @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  // The person actually conducting the interview -- often outside
+  // Recruitment (e.g. a Dev engineer doing a technical round), so they need
+  // read/feedback access to this one interview regardless of department.
+  interviewerId   String?
+  interviewer     User?           @relation("InterviewInterviewer", fields: [interviewerId], references: [id], onDelete: SetNull)
+  createdById     String
+  createdBy       User            @relation("InterviewCreator", fields: [createdById], references: [id])
+  type            InterviewType   @default(PHONE_SCREEN)
+  scheduledAt     DateTime
+  durationMinutes Int             @default(30)
+  location        String?
+  status          InterviewStatus @default(SCHEDULED)
+  feedback        String?
+  rating          Int?
+  // Denormalized from the candidate at creation time rather than joined
+  // through -- matches this codebase's flat-departmentId-per-entity
+  // convention (see Task/Deal/Project) so visibility scoping stays a single
+  // where-clause rather than a join.
+  departmentId    String?
+  department      Department?     @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+}
+
+enum OfferStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  DECLINED
+  RESCINDED
+}
+
+model Offer {
+  id           String      @id @default(uuid())
+  candidateId  String
+  candidate    Candidate   @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  createdById  String
+  createdBy    User        @relation("OfferCreator", fields: [createdById], references: [id])
+  salary       Int
+  startDate    DateTime?
+  status       OfferStatus @default(DRAFT)
+  sentAt       DateTime?
+  respondedAt  DateTime?
+  notes        String?
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+// Singleton row (fixed id, always upserted/read by that same id) holding
+// company-wide, Admin-editable content for parts of the UI that would
+// otherwise be hardcoded copy -- starting with the Dashboard hero section.
+model AppSettings {
+  id          String   @id @default("app-settings")
+  heroTagline String?
+  updatedAt   DateTime @updatedAt
+}
+
+enum GithubAccountType {
+  USER
+  ORG
+}
+
+// Singleton row holding the company's GitHub connection. The token is stored
+// AES-256-GCM encrypted (see common/utils/token-crypto.ts) -- the encryption
+// key lives only in APP_ENCRYPTION_KEY, never here. Deliberately its OWN model
+// rather than a field on AppSettings, because AppSettings has a public read
+// endpoint and this token must never be exposed. Only status (login/type) is
+// ever returned to clients; the token stays server-side.
+model GithubConnection {
+  id               String            @id @default("github-connection")
+  accountType      GithubAccountType @default(ORG)
+  accountLogin     String
+  encryptedToken   String
+  tokenIv          String
+  tokenAuthTag     String
+  connectedByEmail String?
+  updatedAt        DateTime          @updatedAt
+}
+
+// Singleton row holding the company's Apollo.io API key, same
+// encrypted-at-rest shape as GithubConnection. Only status (whether it's
+// connected, who connected it) is ever returned to clients; the key stays
+// server-side and is decrypted per-call in ApolloService.
+model ApolloConnection {
+  id              String   @id @default("apollo-connection")
+  encryptedApiKey String
+  apiKeyIv        String
+  apiKeyAuthTag   String
+  connectedById   String?
+  connectedBy     User?    @relation(fields: [connectedById], references: [id], onDelete: SetNull)
+  connectedAt     DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// A Sales user's own mailbox, connected via SMTP so Bulk Email blasts and
+// Sequence drip steps send from their real address instead of a shared
+// company sender -- recipients see (and can reply to) the actual person,
+// not a noreply@ address. Same encrypted-at-rest shape as ApolloConnection
+// (see common/utils/token-crypto.ts). One row per user; the bulk-email and
+// sequence engines look this up by the campaign/enrollment owner at send
+// time and refuse to send if it's missing or unverified (see
+// EmailConnectionsService.requireVerifiedTransport).
+model UserEmailConnection {
+  id                String    @id @default(uuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  smtpHost          String
+  smtpPort          Int
+  smtpSecure        Boolean   @default(true)
+  smtpUsername      String
+  encryptedPassword String
+  passwordIv        String
+  passwordAuthTag   String
+  fromName          String?
+  fromEmail         String
+  verified          Boolean   @default(false)
+  lastVerifiedAt    DateTime?
+  lastError         String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+// Permanent cache of Apollo API responses, keyed by call type + a normalized
+// (sorted, lowercased) hash of the request params. Covers both searches
+// (people/organizations by name/keywords/etc.) and the credit-consuming
+// reveal calls (person match, organization enrich) that import/enrich
+// trigger -- so searching or importing the same name/domain again is served
+// from Postgres instead of re-hitting Apollo. Never expires: Apollo contact
+// data doesn't change often enough to justify the complexity of a TTL, and
+// the point is to never pay for the same lookup twice.
+model ApolloCache {
+  id        String   @id @default(uuid())
+  kind      String
+  queryKey  String
+  payload   Json
+  createdAt DateTime @default(now())
+
+  @@unique([kind, queryKey])
+  @@index([kind])
+}
+
+// A reusable outreach email, owned collaboratively by the Sales department
+// (any Sales member can edit/delete any template -- same "shared team
+// resource" convention as the recruitment candidate pipeline, not the
+// owner/creator-scoped convention used by Task/Deal). bodyHtml/subject can
+// contain {{firstName}} {{lastName}} {{title}} {{companyName}} merge fields,
+// rendered by common/utils/merge-fields.ts. Will also be referenced by
+// SequenceStep once Sequences are built.
+model EmailTemplate {
+  id           String      @id @default(uuid())
+  name         String
+  subject      String
+  bodyHtml     String
+  // Append the *sender's* signature at send time rather than baking one
+  // person's sign-off into a template the whole team shares.
+  appendSignature Boolean  @default(false)
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  creatorId    String
+  creator      User        @relation(fields: [creatorId], references: [id])
+  sequenceSteps SequenceStep[]
+  bulkEmailCampaigns BulkEmailCampaign[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+enum SuppressionReason {
+  UNSUBSCRIBED
+  BOUNCED
+  MANUAL
+}
+
+// A global "never email this address again" list -- deliberately NOT
+// department-scoped (an unsubscribe must be honored company-wide, not just
+// by the team that sent the email that triggered it). Checked by the
+// Sequence send engine before every send; also enforced independent of
+// EmailTemplate/Sequence lifecycle so it survives even if those are deleted.
+model EmailSuppression {
+  id        String            @id @default(uuid())
+  email     String            @unique
+  reason    SuppressionReason
+  createdAt DateTime          @default(now())
+}
+
+enum SequenceStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  STOPPED
+}
+
+enum SendStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+// A drip campaign definition -- an ordered list of SequenceSteps, each
+// firing delayDays after the previous one (or after enrollment, for the
+// first step). Same collaborative Sales-team ownership as EmailTemplate.
+model Sequence {
+  id           String         @id @default(uuid())
+  name         String
+  description  String?
+  status       SequenceStatus @default(DRAFT)
+  departmentId String?
+  department   Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  creatorId    String
+  creator      User           @relation(fields: [creatorId], references: [id])
+  steps        SequenceStep[]
+  enrollments  SequenceEnrollment[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+}
+
+model SequenceStep {
+  id         String         @id @default(uuid())
+  sequenceId String
+  sequence   Sequence       @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  order      Int
+  delayDays  Int
+  templateId String
+  template   EmailTemplate  @relation(fields: [templateId], references: [id])
+  sends      SequenceSend[]
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@unique([sequenceId, order])
+}
+
+// One contact's progress through a sequence. The send engine (a periodic
+// job, see modules/sequences/sequence-engine.service.ts) scans for rows
+// where status=ACTIVE and nextSendAt<=now(), sends the step at
+// currentStepOrder, then either advances to the next step (bumping
+// nextSendAt by that step's delayDays) or marks the enrollment COMPLETED
+// if there is no next step.
+model SequenceEnrollment {
+  id               String           @id @default(uuid())
+  sequenceId       String
+  sequence         Sequence         @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  contactId        String
+  contact          Contact          @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  status           EnrollmentStatus @default(ACTIVE)
+  currentStepOrder Int              @default(0)
+  nextSendAt       DateTime
+  enrolledById     String
+  enrolledBy       User             @relation(fields: [enrolledById], references: [id])
+  stoppedReason    String?
+  sends            SequenceSend[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  @@unique([sequenceId, contactId])
+}
+
+// One row per actually-attempted send (not per scheduled step) -- the
+// Activity feed and idempotency/audit trail for the engine.
+model SequenceSend {
+  id           String             @id @default(uuid())
+  enrollmentId String
+  enrollment   SequenceEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  // Nullable + SetNull (not Restrict/Cascade): deleting a single surviving
+  // step shouldn't be blocked by, or destroy, its send history -- the row
+  // just loses its step reference. Whole-sequence deletion still fully
+  // cleans up via the enrollmentId cascade above.
+  stepId       String?
+  step         SequenceStep?      @relation(fields: [stepId], references: [id], onDelete: SetNull)
+  status       SendStatus
+  errorMessage String?
+  sentAt       DateTime           @default(now())
+  openedAt     DateTime?
+  openCount    Int                @default(0)
+}
+
+enum BulkSendStatus {
+  PENDING
+  SENT
+  FAILED
+  SKIPPED
+}
+
+// A one-shot blast of a single template to many recipients at once (as
+// opposed to Sequence, which is a scheduled multi-step drip). Recipients can
+// come from existing CRM Contacts (including ones sourced from Apollo --
+// see Contact.source) and/or a pasted/CSV list of raw emails not yet in the
+// CRM. Same collaborative Sales-team ownership as EmailTemplate/Sequence.
+model BulkEmailCampaign {
+  id         String              @id @default(uuid())
+  name       String
+  // Exactly one of (templateId) or (subject + bodyHtml) is set -- enforced in
+  // BulkEmailService.create, since Prisma can't express an XOR constraint.
+  // A saved template is the reusable path; the inline pair is a one-off email
+  // written for this campaign's recipients only, which deliberately never
+  // lands in the shared Templates list.
+  templateId String?
+  template   EmailTemplate?      @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  subject    String?
+  bodyHtml   String?
+  appendSignature Boolean @default(false)
+  creatorId  String
+  creator    User                @relation(fields: [creatorId], references: [id])
+  recipients BulkEmailRecipient[]
+  createdAt  DateTime            @default(now())
+}
+
+// One row per recipient targeted by a campaign. The engine (a periodic job,
+// see modules/bulk-email/bulk-email-engine.service.ts) processes a capped
+// batch of PENDING rows per tick -- spreading a large blast over several
+// cron ticks instead of firing everything in one second -- and flips each
+// to SENT/FAILED/SKIPPED (suppressed). contactId is nullable: a raw pasted
+// email with no matching CRM contact still gets a row, just without
+// merge-field personalization or a live contact to re-check later.
+model BulkEmailRecipient {
+  id           String            @id @default(uuid())
+  campaignId   String
+  campaign     BulkEmailCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contactId    String?
+  contact      Contact?          @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  email        String
+  status       BulkSendStatus    @default(PENDING)
+  errorMessage String?
+  sentAt       DateTime?
+  openedAt     DateTime?
+  openCount    Int               @default(0)
+  createdAt    DateTime          @default(now())
+
+  @@index([campaignId, status])
+  @@index([status, createdAt])
+}
+
+// A link to a screen-recorded walkthrough of the CRM, listed on the "How to
+// Use CRM" page for Admins and Managers. Deliberately NOT a KBArticle with a
+// video field: these are onboarding/training material for the tool itself,
+// not company knowledge, and they carry a tighter audience (see
+// TrainingVideosService's Admin+Manager rule) than the company-wide
+// Knowledge Base.
+//
+// The video file itself lives wherever the poster put it -- Google Drive,
+// YouTube, anywhere with a shareable URL. This app deliberately does not host
+// or stream the bytes: an earlier version accepted uploads onto a Railway
+// volume, which meant capacity planning and permissions for something a Drive
+// link solves for free.
+model TrainingVideo {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  // Free-text grouping shown as a section header on the page, e.g.
+  // "Getting Started" or "Deals & Pipeline". Null = "General".
+  category    String?
+  // Shareable link to the recording. Drive and YouTube URLs are turned into
+  // an inline player on the page (see toEmbedUrl); anything else opens in a
+  // new tab.
+  url         String
+  // Manual ordering within a category -- lower first, ties broken by
+  // createdAt, so a walkthrough series lists in order instead of newest-first.
+  position    Int      @default(0)
+  uploaderId  String
+  uploader    User     @relation("TrainingVideoUploader", fields: [uploaderId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category, position])
+}

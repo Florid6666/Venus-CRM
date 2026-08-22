@@ -1,0 +1,46 @@
+{
+  "name": "venus-crm-desktop",
+  "version": "0.3.0",
+  "private": true,
+  "description": "Venus CRM as a native desktop app -- opens the real website in its own window (no browser bars), and while clocked in, discloses and captures periodic screenshots + an active/idle signal in the background per company policy. Never writes captures to local disk.",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "npm run build && electron .",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:mac": "npm run build && electron-builder --mac"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "electron": "^32.2.0",
+    "electron-builder": "^25.1.8",
+    "png-to-ico": "^3.0.2",
+    "sharp": "^0.35.3",
+    "typescript": "^5.7.2"
+  },
+  "build": {
+    "appId": "com.venuscrm.desktopagent",
+    "productName": "Venus CRM",
+    "icon": "build/icon.ico",
+    "files": [
+      "dist/**/*",
+      "renderer/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "signAndEditExecutable": false
+    },
+    "nsis": {
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.business",
+      "extendInfo": {
+        "NSCameraUsageDescription": "Not used.",
+        "NSScreenCaptureUsageDescription": "Venus CRM captures periodic screenshots during clocked-in hours per company policy."
+      }
+    }
+  }
+}
