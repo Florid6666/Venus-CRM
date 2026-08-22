@@ -743,180 +743,184 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
               </Button>
             </div>
 
-            {/* Calendar Filter Toolbar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 bg-canvas/40 border border-border p-3.5 rounded-xl">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-semibold text-text-dim flex items-center gap-1.5">
-                  <CalendarDays className="h-4 w-4 text-primary" /> Filter by Calendar Date:
-                </span>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-8 text-xs font-medium gap-1.5">
-                      <CalendarIcon className="h-3.5 w-3.5 text-primary" />
-                      {selectedUpdateDateFilter ? format(selectedUpdateDateFilter, "PP") : "All Dates (Click Calendar)"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={selectedUpdateDateFilter}
-                      onSelect={setSelectedUpdateDateFilter}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+            {/* Layout with Embedded Calendar Widget */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* Left Column: Visual Calendar Card */}
+              <div className="lg:col-span-4 rounded-xl border border-primary/20 bg-card p-4 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-1.5">
+                    <CalendarDays className="h-4 w-4" /> Updates Calendar
+                  </span>
+                  {selectedUpdateDateFilter && (
+                    <button
+                      onClick={() => setSelectedUpdateDateFilter(undefined)}
+                      className="text-[11px] text-text-dim hover:text-text underline"
+                    >
+                      Clear Filter
+                    </button>
+                  )}
+                </div>
 
-                {selectedUpdateDateFilter && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedUpdateDateFilter(undefined)}
-                    className="h-8 text-xs text-text-dim hover:text-text"
+                <Calendar
+                  mode="single"
+                  selected={selectedUpdateDateFilter}
+                  onSelect={setSelectedUpdateDateFilter}
+                  className="w-full rounded-lg border border-border bg-background/80 p-2"
+                />
+
+                <div className="text-xs text-text-dim space-y-1.5 pt-2 border-t border-border/60">
+                  <div className="flex justify-between items-center">
+                    <span>Selected Date:</span>
+                    <span className="font-semibold text-text">
+                      {selectedUpdateDateFilter ? format(selectedUpdateDateFilter, "PP") : "All Dates"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Updates Logged:</span>
+                    <span className="font-mono font-bold text-primary">
+                      {(detailedTask.updates ?? [])
+                        .filter((u) => !selectedUpdateDateFilter || new Date(u.createdAt).toDateString() === selectedUpdateDateFilter.toDateString()).length} entry(s)
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Update Form & Feed */}
+              <div className="lg:col-span-8 space-y-4">
+                {/* Daily Update Form */}
+                {showUpdateForm && (
+                  <form
+                    onSubmit={handleCreateDailyUpdate}
+                    className="space-y-4 rounded-xl border border-primary/30 bg-card p-5 shadow-sm"
                   >
-                    <X className="h-3.5 w-3.5 mr-1" /> Reset Date Filter
-                  </Button>
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-bold text-primary">Daily Progress Entry</h4>
+                      
+                      {/* Calendar Picker Field */}
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-text-dim flex items-center gap-1">
+                          <CalendarIcon className="h-3.5 w-3.5 text-primary" /> Work Date:
+                        </span>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" size="sm" className="h-8 text-xs font-normal">
+                              <CalendarIcon className="mr-1.5 h-3.5 w-3.5 text-primary" />
+                              {updateDate ? format(updateDate, "PPP") : <span>Pick date</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="end">
+                            <Calendar
+                              mode="single"
+                              selected={updateDate}
+                              onSelect={(d) => d && setUpdateDate(d)}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-text-dim">
+                          Work Completed *
+                        </label>
+                        <Textarea
+                          placeholder="What did you build or finish on this date?"
+                          value={workCompleted}
+                          onChange={(e) => setWorkCompleted(e.target.value)}
+                          className="text-xs h-20"
+                          required
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-text-dim">
+                          Next Planned Work
+                        </label>
+                        <Textarea
+                          placeholder="What will you work on next?"
+                          value={nextPlan}
+                          onChange={(e) => setNextPlan(e.target.value)}
+                          className="text-xs h-20"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-text-dim">Blockers</label>
+                        <Input
+                          placeholder="Any impediments holding you back?"
+                          value={blockers}
+                          onChange={(e) => setBlockers(e.target.value)}
+                          className="text-xs"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-text-dim">Notes</label>
+                        <Input
+                          placeholder="Additional comments or PR links"
+                          value={notes}
+                          onChange={(e) => setNotes(e.target.value)}
+                          className="text-xs"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowUpdateForm(false)}
+                        className="text-xs"
+                      >
+                        Cancel
+                      </Button>
+                      <Button type="submit" size="sm" className="text-xs">
+                        Record Update
+                      </Button>
+                    </div>
+                  </form>
+                )}
+
+                {/* Updates History */}
+                {detailedTask.updates && detailedTask.updates.length > 0 ? (
+                  <div className="space-y-4">
+                    {detailedTask.updates
+                      .filter((u) => !selectedUpdateDateFilter || new Date(u.createdAt).toDateString() === selectedUpdateDateFilter.toDateString())
+                      .map((u) => (
+                        <div
+                          key={u.id}
+                          className="rounded-xl border border-border bg-card p-5 shadow-sm space-y-3"
+                        >
+                          <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-6 w-6">
+                                <AvatarFallback className="text-[10px]">
+                                  {u.user.firstName[0]}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="font-bold text-xs text-text">
+                                {u.user.firstName} {u.user.lastName}
+                              </span>
+                            </div>
+                            <span className="text-[11px] text-text-dim font-mono flex items-center gap-1">
+                              <CalendarIcon className="h-3 w-3 text-primary" />
+                              {new Date(u.createdAt).toLocaleString()}
+                            </span>
+                          </div>
+
+                          <p className="text-xs text-text whitespace-pre-wrap">{u.content}</p>
+                        </div>
+                      ))}
+                  </div>
+                ) : (
+                  <p className="py-8 text-center text-xs italic text-text-dim">
+                    No daily updates logged yet for this selection.
+                  </p>
                 )}
               </div>
-
-              <div className="text-xs text-text-dim">
-                Showing: <span className="font-semibold text-text font-mono">
-                  {(detailedTask.updates ?? []).filter((u) => !selectedUpdateDateFilter || new Date(u.createdAt).toDateString() === selectedUpdateDateFilter.toDateString()).length} update(s)
-                </span>
-              </div>
             </div>
-
-            {/* Daily Update Form */}
-            {showUpdateForm && (
-              <form
-                onSubmit={handleCreateDailyUpdate}
-                className="space-y-4 rounded-xl border border-primary/30 bg-card p-5 shadow-sm"
-              >
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-bold text-primary">Daily Progress Entry</h4>
-                  
-                  {/* Calendar Picker Field */}
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-text-dim flex items-center gap-1">
-                      <CalendarIcon className="h-3.5 w-3.5 text-primary" /> Work Date:
-                    </span>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" size="sm" className="h-8 text-xs font-normal">
-                          <CalendarIcon className="mr-1.5 h-3.5 w-3.5 text-primary" />
-                          {updateDate ? format(updateDate, "PPP") : <span>Pick date</span>}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="end">
-                        <Calendar
-                          mode="single"
-                          selected={updateDate}
-                          onSelect={(d) => d && setUpdateDate(d)}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-text-dim">
-                      Work Completed *
-                    </label>
-                    <Textarea
-                      placeholder="What did you build or finish on this date?"
-                      value={workCompleted}
-                      onChange={(e) => setWorkCompleted(e.target.value)}
-                      className="text-xs h-20"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-text-dim">
-                      Next Planned Work
-                    </label>
-                    <Textarea
-                      placeholder="What will you work on next?"
-                      value={nextPlan}
-                      onChange={(e) => setNextPlan(e.target.value)}
-                      className="text-xs h-20"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-text-dim">Blockers</label>
-                    <Input
-                      placeholder="Any impediments holding you back?"
-                      value={blockers}
-                      onChange={(e) => setBlockers(e.target.value)}
-                      className="text-xs"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-text-dim">Notes</label>
-                    <Input
-                      placeholder="Additional comments or PR links"
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      className="text-xs"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-2 pt-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowUpdateForm(false)}
-                    className="text-xs"
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" size="sm" className="text-xs">
-                    Record Update
-                  </Button>
-                </div>
-              </form>
-            )}
-
-            {/* Updates History */}
-            {detailedTask.updates && detailedTask.updates.length > 0 ? (
-              <div className="space-y-4">
-                {detailedTask.updates
-                  .filter((u) => !selectedUpdateDateFilter || new Date(u.createdAt).toDateString() === selectedUpdateDateFilter.toDateString())
-                  .map((u) => (
-                    <div
-                      key={u.id}
-                      className="rounded-xl border border-border bg-card p-5 shadow-sm space-y-3"
-                    >
-                      <div className="flex items-center justify-between border-b border-border/50 pb-2">
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarFallback className="text-[10px]">
-                              {u.user.firstName[0]}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span className="font-bold text-xs text-text">
-                            {u.user.firstName} {u.user.lastName}
-                          </span>
-                        </div>
-                        <span className="text-[11px] text-text-dim font-mono flex items-center gap-1">
-                          <CalendarIcon className="h-3 w-3 text-primary" />
-                          {new Date(u.createdAt).toLocaleString()}
-                        </span>
-                      </div>
-
-                      <p className="text-xs text-text whitespace-pre-wrap">{u.content}</p>
-                    </div>
-                  ))}
-              </div>
-            ) : (
-              <p className="py-8 text-center text-xs italic text-text-dim">
-                No daily updates logged yet. Daily updates are required before completing this task.
-              </p>
-            )}
           </div>
         )}
 
@@ -933,190 +937,192 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
               <Button
                 size="sm"
                 onClick={() => setShowTimeLogForm(!showTimeLogForm)}
-                className="gap-1 text-xs font-semibold"
+                className="gap-1 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white"
               >
                 <Plus className="h-3.5 w-3.5" />
                 Log Hours
               </Button>
             </div>
 
-            {/* Calendar Filter Toolbar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 bg-canvas/40 border border-border p-3.5 rounded-xl">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-semibold text-text-dim flex items-center gap-1.5">
-                  <CalendarDays className="h-4 w-4 text-emerald-400" /> Filter Logged Time by Date:
-                </span>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="h-8 text-xs font-medium gap-1.5">
-                      <CalendarIcon className="h-3.5 w-3.5 text-emerald-400" />
-                      {selectedLogDateFilter ? format(selectedLogDateFilter, "PP") : "All Dates (Click Calendar)"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={selectedLogDateFilter}
-                      onSelect={setSelectedLogDateFilter}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+            {/* Layout with Embedded Calendar Widget */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* Left Column: Visual Calendar Card */}
+              <div className="lg:col-span-4 rounded-xl border border-emerald-500/20 bg-card p-4 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                    <CalendarDays className="h-4 w-4" /> Time Logs Calendar
+                  </span>
+                  {selectedLogDateFilter && (
+                    <button
+                      onClick={() => setSelectedLogDateFilter(undefined)}
+                      className="text-[11px] text-text-dim hover:text-text underline"
+                    >
+                      Clear Filter
+                    </button>
+                  )}
+                </div>
 
-                {selectedLogDateFilter && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedLogDateFilter(undefined)}
-                    className="h-8 text-xs text-text-dim hover:text-text"
+                <Calendar
+                  mode="single"
+                  selected={selectedLogDateFilter}
+                  onSelect={setSelectedLogDateFilter}
+                  className="w-full rounded-lg border border-border bg-background/80 p-2"
+                />
+
+                <div className="text-xs text-text-dim space-y-1.5 pt-2 border-t border-border/60">
+                  <div className="flex justify-between items-center">
+                    <span>Selected Date:</span>
+                    <span className="font-semibold text-text">
+                      {selectedLogDateFilter ? format(selectedLogDateFilter, "PP") : "All Dates"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span>Logged Hours:</span>
+                    <span className="font-mono font-bold text-emerald-400">
+                      {((detailedTask.timeLogs ?? [])
+                        .filter((l) => !selectedLogDateFilter || new Date(l.date).toDateString() === selectedLogDateFilter.toDateString())
+                        .reduce((acc, l) => acc + l.minutes, 0) / 60).toFixed(1)} hrs
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Time Log Form & Table */}
+              <div className="lg:col-span-8 space-y-4">
+                {/* Time Log Form */}
+                {showTimeLogForm && (
+                  <form
+                    onSubmit={handleCreateTimeLog}
+                    className="space-y-4 rounded-xl border border-emerald-500/30 bg-card p-5 shadow-sm"
                   >
-                    <X className="h-3.5 w-3.5 mr-1" /> Reset Date Filter
-                  </Button>
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-bold text-emerald-400">Log Working Time</h4>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-text-dim flex items-center gap-1">
+                          <CalendarIcon className="h-3.5 w-3.5 text-emerald-400" /> Log Date:
+                        </span>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" size="sm" className="h-8 text-xs font-normal">
+                              <CalendarIcon className="mr-1.5 h-3.5 w-3.5 text-emerald-400" />
+                              {logDate ? format(logDate, "PPP") : <span>Pick date</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="end">
+                            <Calendar
+                              mode="single"
+                              selected={logDate}
+                              onSelect={(d) => d && setLogDate(d)}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-text-dim">Start Time</label>
+                        <Input
+                          placeholder="10:00 AM"
+                          value={startTime}
+                          onChange={(e) => setStartTime(e.target.value)}
+                          className="text-xs"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-text-dim">End Time</label>
+                        <Input
+                          placeholder="01:00 PM"
+                          value={endTime}
+                          onChange={(e) => setEndTime(e.target.value)}
+                          className="text-xs"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-text-dim">Total Hours</label>
+                        <Input
+                          type="number"
+                          step="0.5"
+                          placeholder="3.0"
+                          value={logHours}
+                          onChange={(e) => setLogHours(e.target.value)}
+                          className="text-xs"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-text-dim">Work Summary</label>
+                      <Textarea
+                        placeholder="Created dashboard widgets and integrated APIs."
+                        value={timeLogSummary}
+                        onChange={(e) => setTimeLogSummary(e.target.value)}
+                        className="text-xs h-16"
+                      />
+                    </div>
+
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowTimeLogForm(false)}
+                        className="text-xs"
+                      >
+                        Cancel
+                      </Button>
+                      <Button type="submit" size="sm" className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white">
+                        Save Time Log
+                      </Button>
+                    </div>
+                  </form>
+                )}
+
+                {/* Time Logs Table */}
+                {detailedTask.timeLogs && detailedTask.timeLogs.length > 0 ? (
+                  <div className="overflow-hidden rounded-xl border border-border bg-card">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-muted/50 border-b border-border text-text-dim uppercase font-semibold">
+                        <tr>
+                          <th className="p-3">User</th>
+                          <th className="p-3">Date</th>
+                          <th className="p-3">Hours</th>
+                          <th className="p-3">Summary / Notes</th>
+                          <th className="p-3">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {detailedTask.timeLogs
+                          .filter((l) => !selectedLogDateFilter || new Date(l.date).toDateString() === selectedLogDateFilter.toDateString())
+                          .map((l) => (
+                            <tr key={l.id} className="hover:bg-card-hover/40">
+                              <td className="p-3 font-semibold text-text">{l.user.firstName} {l.user.lastName}</td>
+                              <td className="p-3 text-text-dim font-mono flex items-center gap-1">
+                                <CalendarIcon className="h-3 w-3 text-emerald-400" />
+                                {new Date(l.date).toLocaleDateString()}
+                              </td>
+                              <td className="p-3 font-mono font-bold text-emerald-400">{(l.minutes / 60).toFixed(1)} hrs</td>
+                              <td className="p-3 text-text">{l.note || "No details"}</td>
+                              <td className="p-3">
+                                <Badge variant="outline" className="text-[10px]">
+                                  {l.status}
+                                </Badge>
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <p className="py-8 text-center text-xs italic text-text-dim">
+                    No time logs recorded yet for this selection.
+                  </p>
                 )}
               </div>
-
-              <div className="flex items-center gap-2 text-xs">
-                <span className="text-text-dim">Logged Time:</span>
-                <span className="font-mono font-bold text-emerald-400">
-                  {((detailedTask.timeLogs ?? [])
-                    .filter((l) => !selectedLogDateFilter || new Date(l.date).toDateString() === selectedLogDateFilter.toDateString())
-                    .reduce((acc, l) => acc + l.minutes, 0) / 60).toFixed(1)} hrs
-                </span>
-              </div>
             </div>
-
-            {/* Time Log Form */}
-            {showTimeLogForm && (
-              <form
-                onSubmit={handleCreateTimeLog}
-                className="space-y-4 rounded-xl border border-emerald-500/30 bg-card p-5 shadow-sm"
-              >
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-bold text-emerald-400">Log Working Time</h4>
-
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-text-dim flex items-center gap-1">
-                      <CalendarIcon className="h-3.5 w-3.5 text-emerald-400" /> Log Date:
-                    </span>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button variant="outline" size="sm" className="h-8 text-xs font-normal">
-                          <CalendarIcon className="mr-1.5 h-3.5 w-3.5 text-emerald-400" />
-                          {logDate ? format(logDate, "PPP") : <span>Pick date</span>}
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="end">
-                        <Calendar
-                          mode="single"
-                          selected={logDate}
-                          onSelect={(d) => d && setLogDate(d)}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-text-dim">Start Time</label>
-                    <Input
-                      placeholder="10:00 AM"
-                      value={startTime}
-                      onChange={(e) => setStartTime(e.target.value)}
-                      className="text-xs"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-text-dim">End Time</label>
-                    <Input
-                      placeholder="01:00 PM"
-                      value={endTime}
-                      onChange={(e) => setEndTime(e.target.value)}
-                      className="text-xs"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-text-dim">Total Hours</label>
-                    <Input
-                      type="number"
-                      step="0.5"
-                      placeholder="3.0"
-                      value={logHours}
-                      onChange={(e) => setLogHours(e.target.value)}
-                      className="text-xs"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-text-dim">Work Summary</label>
-                  <Textarea
-                    placeholder="Created dashboard widgets and integrated APIs."
-                    value={timeLogSummary}
-                    onChange={(e) => setTimeLogSummary(e.target.value)}
-                    className="text-xs h-16"
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowTimeLogForm(false)}
-                    className="text-xs"
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit" size="sm" className="text-xs bg-emerald-600 hover:bg-emerald-500">
-                    Save Time Log
-                  </Button>
-                </div>
-              </form>
-            )}
-
-            {/* Time Logs Table */}
-            {detailedTask.timeLogs && detailedTask.timeLogs.length > 0 ? (
-              <div className="overflow-hidden rounded-xl border border-border bg-card">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-muted/50 border-b border-border text-text-dim uppercase font-semibold">
-                    <tr>
-                      <th className="p-3">User</th>
-                      <th className="p-3">Date</th>
-                      <th className="p-3">Hours</th>
-                      <th className="p-3">Summary / Notes</th>
-                      <th className="p-3">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {detailedTask.timeLogs
-                      .filter((l) => !selectedLogDateFilter || new Date(l.date).toDateString() === selectedLogDateFilter.toDateString())
-                      .map((l) => (
-                        <tr key={l.id} className="hover:bg-card-hover/40">
-                          <td className="p-3 font-semibold text-text">{l.user.firstName} {l.user.lastName}</td>
-                          <td className="p-3 text-text-dim font-mono flex items-center gap-1">
-                            <CalendarIcon className="h-3 w-3 text-emerald-400" />
-                            {new Date(l.date).toLocaleDateString()}
-                          </td>
-                          <td className="p-3 font-mono font-bold text-emerald-400">{(l.minutes / 60).toFixed(1)} hrs</td>
-                          <td className="p-3 text-text">{l.note || "No details"}</td>
-                          <td className="p-3">
-                            <Badge variant="outline" className="text-[10px]">
-                              {l.status}
-                            </Badge>
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <p className="py-8 text-center text-xs italic text-text-dim">
-                No time logs recorded yet. Time logs are required before completing this task.
-              </p>
-            )}
           </div>
         )}
 
