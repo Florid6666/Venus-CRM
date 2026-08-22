@@ -5,6 +5,8 @@ import {
   ArrowLeft,
   ArrowRight,
   Bug as BugIcon,
+  Calendar as CalendarIcon,
+  CalendarDays,
   CheckCircle2,
   Clock,
   FileText,
@@ -21,8 +23,11 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { format } from "date-fns";
 import { useAuthStore } from "@/stores/auth-store";
 import { useTask, useUpdateTask, useCreateTask } from "@/hooks/use-tasks";
 import { useBugs, useCreateBug, useUpdateBug, useAddBugComment } from "@/hooks/use-bugs";
@@ -93,6 +98,13 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
   const [bugPriority, setBugPriority] = useState<BugPriority>("MEDIUM");
   const [bugAssigneeId, setBugAssigneeId] = useState("");
   const [bugSubtaskId, setBugSubtaskId] = useState("");
+
+  // Calendar Date Selection & Filter states
+  const [updateDate, setUpdateDate] = useState<Date>(new Date());
+  const [selectedUpdateDateFilter, setSelectedUpdateDateFilter] = useState<Date | undefined>(undefined);
+
+  const [logDate, setLogDate] = useState<Date>(new Date());
+  const [selectedLogDateFilter, setSelectedLogDateFilter] = useState<Date | undefined>(undefined);
 
   const [selectedBugId, setSelectedBugId] = useState<string | null>(null);
   const [bugCommentText, setBugCommentText] = useState("");
@@ -192,7 +204,9 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
       toast.error("Work completed field is required.");
       return;
     }
+    const dateFormatted = updateDate ? format(updateDate, "PPP") : format(new Date(), "PPP");
     const fullContent = [
+      `Date: ${dateFormatted}`,
       `Completed: ${workCompleted}`,
       nextPlan ? `Next Plan: ${nextPlan}` : "",
       blockers ? `Blockers: ${blockers}` : "",
@@ -228,7 +242,7 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
       await createTimeLog.mutateAsync({
         taskId,
         minutes,
-        date: new Date().toISOString(),
+        date: logDate ? logDate.toISOString() : new Date().toISOString(),
         note: `${startTime} - ${endTime}: ${timeLogSummary}`,
       });
       setTimeLogSummary("");
@@ -729,20 +743,88 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
               </Button>
             </div>
 
+            {/* Calendar Filter Toolbar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-canvas/40 border border-border p-3.5 rounded-xl">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-semibold text-text-dim flex items-center gap-1.5">
+                  <CalendarDays className="h-4 w-4 text-primary" /> Filter by Calendar Date:
+                </span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8 text-xs font-medium gap-1.5">
+                      <CalendarIcon className="h-3.5 w-3.5 text-primary" />
+                      {selectedUpdateDateFilter ? format(selectedUpdateDateFilter, "PP") : "All Dates (Click Calendar)"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={selectedUpdateDateFilter}
+                      onSelect={setSelectedUpdateDateFilter}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+
+                {selectedUpdateDateFilter && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedUpdateDateFilter(undefined)}
+                    className="h-8 text-xs text-text-dim hover:text-text"
+                  >
+                    <X className="h-3.5 w-3.5 mr-1" /> Reset Date Filter
+                  </Button>
+                )}
+              </div>
+
+              <div className="text-xs text-text-dim">
+                Showing: <span className="font-semibold text-text font-mono">
+                  {(detailedTask.updates ?? []).filter((u) => !selectedUpdateDateFilter || new Date(u.createdAt).toDateString() === selectedUpdateDateFilter.toDateString()).length} update(s)
+                </span>
+              </div>
+            </div>
+
             {/* Daily Update Form */}
             {showUpdateForm && (
               <form
                 onSubmit={handleCreateDailyUpdate}
                 className="space-y-4 rounded-xl border border-primary/30 bg-card p-5 shadow-sm"
               >
-                <h4 className="text-sm font-bold text-primary">Daily Progress Entry</h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-bold text-primary">Daily Progress Entry</h4>
+                  
+                  {/* Calendar Picker Field */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-text-dim flex items-center gap-1">
+                      <CalendarIcon className="h-3.5 w-3.5 text-primary" /> Work Date:
+                    </span>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-8 text-xs font-normal">
+                          <CalendarIcon className="mr-1.5 h-3.5 w-3.5 text-primary" />
+                          {updateDate ? format(updateDate, "PPP") : <span>Pick date</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="end">
+                        <Calendar
+                          mode="single"
+                          selected={updateDate}
+                          onSelect={(d) => d && setUpdateDate(d)}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-text-dim">
-                      Work Completed Today *
+                      Work Completed *
                     </label>
                     <Textarea
-                      placeholder="What did you build or finish today?"
+                      placeholder="What did you build or finish on this date?"
                       value={workCompleted}
                       onChange={(e) => setWorkCompleted(e.target.value)}
                       className="text-xs h-20"
@@ -754,7 +836,7 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                       Next Planned Work
                     </label>
                     <Textarea
-                      placeholder="What will you work on tomorrow?"
+                      placeholder="What will you work on next?"
                       value={nextPlan}
                       onChange={(e) => setNextPlan(e.target.value)}
                       className="text-xs h-20"
@@ -802,30 +884,33 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
             {/* Updates History */}
             {detailedTask.updates && detailedTask.updates.length > 0 ? (
               <div className="space-y-4">
-                {detailedTask.updates.map((u) => (
-                  <div
-                    key={u.id}
-                    className="rounded-xl border border-border bg-card p-5 shadow-sm space-y-3"
-                  >
-                    <div className="flex items-center justify-between border-b border-border/50 pb-2">
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6">
-                          <AvatarFallback className="text-[10px]">
-                            {u.user.firstName[0]}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="font-bold text-xs text-text">
-                          {u.user.firstName} {u.user.lastName}
+                {detailedTask.updates
+                  .filter((u) => !selectedUpdateDateFilter || new Date(u.createdAt).toDateString() === selectedUpdateDateFilter.toDateString())
+                  .map((u) => (
+                    <div
+                      key={u.id}
+                      className="rounded-xl border border-border bg-card p-5 shadow-sm space-y-3"
+                    >
+                      <div className="flex items-center justify-between border-b border-border/50 pb-2">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-6 w-6">
+                            <AvatarFallback className="text-[10px]">
+                              {u.user.firstName[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-bold text-xs text-text">
+                            {u.user.firstName} {u.user.lastName}
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-text-dim font-mono flex items-center gap-1">
+                          <CalendarIcon className="h-3 w-3 text-primary" />
+                          {new Date(u.createdAt).toLocaleString()}
                         </span>
                       </div>
-                      <span className="text-[11px] text-text-dim font-mono">
-                        {new Date(u.createdAt).toLocaleString()}
-                      </span>
-                    </div>
 
-                    <p className="text-xs text-text whitespace-pre-wrap">{u.content}</p>
-                  </div>
-                ))}
+                      <p className="text-xs text-text whitespace-pre-wrap">{u.content}</p>
+                    </div>
+                  ))}
               </div>
             ) : (
               <p className="py-8 text-center text-xs italic text-text-dim">
@@ -855,13 +940,83 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
               </Button>
             </div>
 
+            {/* Calendar Filter Toolbar */}
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-canvas/40 border border-border p-3.5 rounded-xl">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-semibold text-text-dim flex items-center gap-1.5">
+                  <CalendarDays className="h-4 w-4 text-emerald-400" /> Filter Logged Time by Date:
+                </span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8 text-xs font-medium gap-1.5">
+                      <CalendarIcon className="h-3.5 w-3.5 text-emerald-400" />
+                      {selectedLogDateFilter ? format(selectedLogDateFilter, "PP") : "All Dates (Click Calendar)"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={selectedLogDateFilter}
+                      onSelect={setSelectedLogDateFilter}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+
+                {selectedLogDateFilter && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedLogDateFilter(undefined)}
+                    className="h-8 text-xs text-text-dim hover:text-text"
+                  >
+                    <X className="h-3.5 w-3.5 mr-1" /> Reset Date Filter
+                  </Button>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 text-xs">
+                <span className="text-text-dim">Logged Time:</span>
+                <span className="font-mono font-bold text-emerald-400">
+                  {((detailedTask.timeLogs ?? [])
+                    .filter((l) => !selectedLogDateFilter || new Date(l.date).toDateString() === selectedLogDateFilter.toDateString())
+                    .reduce((acc, l) => acc + l.minutes, 0) / 60).toFixed(1)} hrs
+                </span>
+              </div>
+            </div>
+
             {/* Time Log Form */}
             {showTimeLogForm && (
               <form
                 onSubmit={handleCreateTimeLog}
                 className="space-y-4 rounded-xl border border-emerald-500/30 bg-card p-5 shadow-sm"
               >
-                <h4 className="text-sm font-bold text-emerald-400">Log Working Time</h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-bold text-emerald-400">Log Working Time</h4>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-text-dim flex items-center gap-1">
+                      <CalendarIcon className="h-3.5 w-3.5 text-emerald-400" /> Log Date:
+                    </span>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" className="h-8 text-xs font-normal">
+                          <CalendarIcon className="mr-1.5 h-3.5 w-3.5 text-emerald-400" />
+                          {logDate ? format(logDate, "PPP") : <span>Pick date</span>}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="end">
+                        <Calendar
+                          mode="single"
+                          selected={logDate}
+                          onSelect={(d) => d && setLogDate(d)}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-text-dim">Start Time</label>
@@ -936,19 +1091,24 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {detailedTask.timeLogs.map((l) => (
-                      <tr key={l.id} className="hover:bg-card-hover/40">
-                        <td className="p-3 font-semibold text-text">{l.user.firstName} {l.user.lastName}</td>
-                        <td className="p-3 text-text-dim font-mono">{new Date(l.date).toLocaleDateString()}</td>
-                        <td className="p-3 font-mono font-bold text-emerald-400">{(l.minutes / 60).toFixed(1)} hrs</td>
-                        <td className="p-3 text-text">{l.note || "No details"}</td>
-                        <td className="p-3">
-                          <Badge variant="outline" className="text-[10px]">
-                            {l.status}
-                          </Badge>
-                        </td>
-                      </tr>
-                    ))}
+                    {detailedTask.timeLogs
+                      .filter((l) => !selectedLogDateFilter || new Date(l.date).toDateString() === selectedLogDateFilter.toDateString())
+                      .map((l) => (
+                        <tr key={l.id} className="hover:bg-card-hover/40">
+                          <td className="p-3 font-semibold text-text">{l.user.firstName} {l.user.lastName}</td>
+                          <td className="p-3 text-text-dim font-mono flex items-center gap-1">
+                            <CalendarIcon className="h-3 w-3 text-emerald-400" />
+                            {new Date(l.date).toLocaleDateString()}
+                          </td>
+                          <td className="p-3 font-mono font-bold text-emerald-400">{(l.minutes / 60).toFixed(1)} hrs</td>
+                          <td className="p-3 text-text">{l.note || "No details"}</td>
+                          <td className="p-3">
+                            <Badge variant="outline" className="text-[10px]">
+                              {l.status}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
                   </tbody>
                 </table>
               </div>
