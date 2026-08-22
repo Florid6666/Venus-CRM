@@ -1,5 +1,5 @@
 import { IsEnum, IsInt, IsOptional, IsString, IsUUID, Min, MinLength } from "class-validator";
-import { BacklinkStatus } from "@prisma/client";
+import { BacklinkVerificationStatus } from "@prisma/client";
 
 export class CreateSeoBacklinkDto {
   @IsString()
@@ -16,8 +16,8 @@ export class CreateSeoBacklinkDto {
   domainAuthority?: number;
 
   @IsOptional()
-  @IsEnum(BacklinkStatus)
-  status?: BacklinkStatus;
+  @IsEnum(BacklinkVerificationStatus)
+  status?: BacklinkVerificationStatus;
 
   @IsOptional()
   @IsUUID()

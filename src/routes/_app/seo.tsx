@@ -71,6 +71,7 @@ import {
 import { useProjects } from "@/hooks/use-projects";
 import { useUsers } from "@/hooks/use-users";
 import { useTasks } from "@/hooks/use-tasks";
+import { useDepartments } from "@/hooks/use-departments";
 import {
   ContentBriefStatus,
   BacklinkVerificationStatus,
@@ -102,7 +103,12 @@ export function SeoPage() {
 
   const currentUser = useAuthStore((s) => s.user);
   const isManager = currentUser?.role?.name === "MANAGER" || currentUser?.role?.name === "ADMIN";
-  const departmentId = currentUser?.department?.id;
+  const { data: departments } = useDepartments();
+  const digitalMarketingDept = useMemo(
+    () => departments?.find((d) => d.name === "Digital Marketing"),
+    [departments]
+  );
+  const departmentId = currentUser?.department?.id || digitalMarketingDept?.id;
 
   const { data: users } = useUsers();
   const { data: projects } = useProjects({ departmentId });
@@ -1095,6 +1101,22 @@ export function SeoPage() {
                 <Input type="number" value={kwDiff} onChange={(e) => setKwDiff(e.target.value)} placeholder="e.g. 45" />
               </div>
             </div>
+            <div className="space-y-1.5">
+              <Label>Associated Project</Label>
+              <Select value={kwProjectId} onValueChange={setKwProjectId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Project (Optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No Specific Project (Global)</SelectItem>
+                  {(projects ?? []).map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => setCreateKeywordOpen(false)}>
                 Cancel
@@ -1119,6 +1141,22 @@ export function SeoPage() {
             <div className="space-y-1.5">
               <Label>Primary Target Keyword</Label>
               <Input value={briefKw} onChange={(e) => setBriefKw(e.target.value)} placeholder="e.g. crm features" required />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Assign Writer</Label>
+              <Select value={briefAssignee} onValueChange={setBriefAssignee}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Assignee (Optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Unassigned</SelectItem>
+                  {(users ?? []).map((u) => (
+                    <SelectItem key={u.id} value={u.id}>
+                      {u.firstName} {u.lastName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <DialogFooter>
               <Button type="button" variant="ghost" onClick={() => setCreateBriefOpen(false)}>
