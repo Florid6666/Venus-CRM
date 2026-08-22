@@ -34,7 +34,16 @@ const taskInclude = {
     include: {
       assignee: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
       tester: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
-      bugs: { select: { id: true, status: true, title: true, bugNumber: true } },
+      bugs: {
+        include: {
+          reporter: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+          assignee: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+          comments: {
+            include: { user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
+            orderBy: { createdAt: "asc" as const },
+          },
+        },
+      },
     },
     orderBy: { createdAt: "asc" as const },
   },

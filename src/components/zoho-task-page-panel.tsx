@@ -987,7 +987,7 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                 className="space-y-4 rounded-xl border border-amber-500/30 bg-card p-5 shadow-sm"
               >
                 <h4 className="text-sm font-bold text-amber-400">Report New Bug</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-text-dim">Bug Title *</label>
                     <Input
@@ -997,6 +997,21 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                       className="text-xs"
                       required
                     />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-text-dim">Target Task / Subtask Scope</label>
+                    <select
+                      value={bugSubtaskId}
+                      onChange={(e) => setBugSubtaskId(e.target.value)}
+                      className="w-full rounded-md border border-border bg-background px-3 py-1.5 text-xs text-text"
+                    >
+                      <option value="">Main Task: #{detailedTask.taskNumber}</option>
+                      {(detailedTask.subtasks ?? []).map((st) => (
+                        <option key={st.id} value={st.id}>
+                          Subtask: {st.title}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-text-dim">Assign Developer</label>
@@ -1082,6 +1097,7 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                       <tr>
                         <th className="p-3">Bug #</th>
                         <th className="p-3">Title</th>
+                        <th className="p-3">Target Scope</th>
                         <th className="p-3">Severity</th>
                         <th className="p-3">Assignee</th>
                         <th className="p-3">Status</th>
@@ -1089,62 +1105,78 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
-                      {allTaskBugs.map((b) => (
-                        <tr
-                          key={b.id}
-                          onClick={() => setSelectedBugId(b.id)}
-                          className="hover:bg-card-hover/40 cursor-pointer"
-                        >
-                          <td className="p-3 font-mono font-bold text-amber-400">
-                            #{b.bugNumber}
-                          </td>
-                          <td className="p-3 font-semibold text-text">
-                            {b.title}
-                          </td>
-                          <td className="p-3">
-                            <span
-                              className={`rounded border px-2 py-0.5 text-[10px] font-bold ${
-                                BUG_SEVERITY_COLORS[b.severity]
-                              }`}
-                            >
-                              {b.severity}
-                            </span>
-                          </td>
-                          <td className="p-3 text-text-dim">
-                            {b.assignee ? `${b.assignee.firstName} ${b.assignee.lastName}` : "Unassigned"}
-                          </td>
-                          <td className="p-3">
-                            <Badge
-                              variant={b.status === "CLOSED" ? "outline" : "secondary"}
-                              className="text-[10px]"
-                            >
-                              {BUG_STATUS_LABELS[b.status]}
-                            </Badge>
-                          </td>
-                          <td className="p-3 text-right">
-                            <select
-                              value={b.status}
-                              onClick={(e) => e.stopPropagation()}
-                              onChange={(e) =>
-                                handleUpdateBugStatus(b.id, e.target.value as BugStatus)
-                              }
-                              className="rounded border border-border bg-background px-2 py-1 text-[11px] text-text"
-                            >
-                              {BUG_STATUSES.filter(
-                                (st) =>
-                                  isTester ||
-                                  isManagerOrAdmin ||
-                                  (st !== "CLOSED" && st !== "REOPENED") ||
-                                  st === b.status
-                              ).map((st) => (
-                                <option key={st} value={st}>
-                                  {BUG_STATUS_LABELS[st]}
-                                </option>
-                              ))}
-                            </select>
-                          </td>
-                        </tr>
-                      ))}
+                      {allTaskBugs.map((b) => {
+                        const targetSubtask = detailedTask.subtasks?.find((st) => st.id === b.subtaskId);
+                        return (
+                          <tr
+                            key={b.id}
+                            onClick={() => setSelectedBugId(b.id)}
+                            className={`hover:bg-card-hover/40 cursor-pointer ${
+                              selectedBugId === b.id ? "bg-primary/10 font-medium" : ""
+                            }`}
+                          >
+                            <td className="p-3 font-mono font-bold text-amber-400">
+                              #{b.bugNumber}
+                            </td>
+                            <td className="p-3 font-semibold text-text">
+                              {b.title}
+                            </td>
+                            <td className="p-3">
+                              {b.subtaskId || (b as any).subtaskTitle ? (
+                                <Badge variant="secondary" className="text-[10px] bg-purple-500/10 text-purple-300 border-purple-500/20 font-medium">
+                                  Subtask: {targetSubtask?.title ?? (b as any).subtaskTitle ?? "Subtask"}
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-[10px] text-primary border-primary/20 font-medium">
+                                  Task #{detailedTask.taskNumber}
+                                </Badge>
+                              )}
+                            </td>
+                            <td className="p-3">
+                              <span
+                                className={`rounded border px-2 py-0.5 text-[10px] font-bold ${
+                                  BUG_SEVERITY_COLORS[b.severity]
+                                }`}
+                              >
+                                {b.severity}
+                              </span>
+                            </td>
+                            <td className="p-3 text-text-dim">
+                              {b.assignee ? `${b.assignee.firstName} ${b.assignee.lastName}` : "Unassigned"}
+                            </td>
+                            <td className="p-3">
+                              <Badge
+                                variant={b.status === "CLOSED" ? "outline" : "secondary"}
+                                className="text-[10px]"
+                              >
+                                {BUG_STATUS_LABELS[b.status]}
+                              </Badge>
+                            </td>
+                            <td className="p-3 text-right">
+                              <select
+                                value={b.status}
+                                onClick={(e) => e.stopPropagation()}
+                                onChange={(e) =>
+                                  handleUpdateBugStatus(b.id, e.target.value as BugStatus)
+                                }
+                                className="rounded border border-border bg-background px-2 py-1 text-[11px] text-text"
+                              >
+                                {BUG_STATUSES.filter(
+                                  (st) =>
+                                    isTester ||
+                                    isManagerOrAdmin ||
+                                    (st !== "CLOSED" && st !== "REOPENED") ||
+                                    st === b.status
+                                ).map((st) => (
+                                  <option key={st} value={st}>
+                                    {BUG_STATUS_LABELS[st]}
+                                  </option>
+                                ))}
+                              </select>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -1164,7 +1196,46 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                       </Badge>
                     </div>
 
-                    <p className="text-xs text-text">{selectedBug.description || "No description."}</p>
+                    {/* Task & Subtask Context Info Box */}
+                    <div className="rounded-lg bg-background/80 border border-border p-3.5 text-xs space-y-2">
+                      <span className="text-[10px] font-bold text-text-dim uppercase tracking-wider block">
+                        Associated Task & Subtask Details
+                      </span>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <span className="text-text-dim block text-[11px]">Parent Task:</span>
+                          <strong className="text-text font-semibold">
+                            Task #{detailedTask.taskNumber} — {detailedTask.title}
+                          </strong>
+                        </div>
+                        <div>
+                          <span className="text-text-dim block text-[11px]">Subtask Scope:</span>
+                          <strong className="text-purple-300 font-semibold">
+                            {selectedBug.subtaskId
+                              ? (detailedTask.subtasks?.find((st) => st.id === selectedBug.subtaskId)?.title ?? "Subtask Scope")
+                              : "Main Task Scope"}
+                          </strong>
+                        </div>
+                        {selectedBug.reporter && (
+                          <div>
+                            <span className="text-text-dim block text-[11px]">Reported By:</span>
+                            <span className="text-text font-medium">
+                              {selectedBug.reporter.firstName} {selectedBug.reporter.lastName}
+                            </span>
+                          </div>
+                        )}
+                        <div>
+                          <span className="text-text-dim block text-[11px]">Assigned Developer:</span>
+                          <span className="text-text font-medium">
+                            {selectedBug.assignee
+                              ? `${selectedBug.assignee.firstName} ${selectedBug.assignee.lastName}`
+                              : "Unassigned"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-xs text-text leading-relaxed">{selectedBug.description || "No description provided."}</p>
 
                     {/* Bug Comments History */}
                     <div className="space-y-3 pt-2">
