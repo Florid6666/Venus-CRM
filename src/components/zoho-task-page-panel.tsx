@@ -1110,7 +1110,7 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                         return (
                           <tr
                             key={b.id}
-                            onClick={() => setSelectedBugId(b.id)}
+                            onClick={() => setSelectedBugId((prev) => (prev === b.id ? null : b.id))}
                             className={`hover:bg-card-hover/40 cursor-pointer ${
                               selectedBugId === b.id ? "bg-primary/10 font-medium" : ""
                             }`}
@@ -1191,9 +1191,21 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                         </span>
                         <h4 className="text-lg font-bold text-text">{selectedBug.title}</h4>
                       </div>
-                      <Badge variant="outline" className="text-xs">
-                        Status: {BUG_STATUS_LABELS[selectedBug.status]}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          Status: {BUG_STATUS_LABELS[selectedBug.status]}
+                        </Badge>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setSelectedBugId(null)}
+                          title="Close Bug Details"
+                          className="h-7 w-7 rounded-full text-text-dim hover:text-text hover:bg-muted"
+                        >
+                          <X className="h-4 w-4" />
+                          <span className="sr-only">Close Bug Details</span>
+                        </Button>
+                      </div>
                     </div>
 
                     {/* Task & Subtask Context Info Box */}
