@@ -151,6 +151,9 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
 
   const canCompleteTask =
     hasDailyUpdates && hasTimeLogs && allBugsClosed && allSubtasksDone && (isReadyForTesting || detailedTask.status === "DONE");
+  // Only the designated Tester (or a Manager/Admin override) may trigger completion —
+  // must mirror the server-side guard in tasks.service.ts validateStatusTransition.
+  const canApproveCompletion = isTester || isManagerOrAdmin;
 
   // Handlers
   const handleStatusChange = async (newStatus: TaskStatus) => {
@@ -1115,7 +1118,13 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                               }
                               className="rounded border border-border bg-background px-2 py-1 text-[11px] text-text"
                             >
-                              {BUG_STATUSES.map((st) => (
+                              {BUG_STATUSES.filter(
+                                (st) =>
+                                  isTester ||
+                                  isManagerOrAdmin ||
+                                  (st !== "CLOSED" && st !== "REOPENED") ||
+                                  st === b.status
+                              ).map((st) => (
                                 <option key={st} value={st}>
                                   {BUG_STATUS_LABELS[st]}
                                 </option>
@@ -1295,9 +1304,14 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
               </div>
 
               {/* Action Trigger */}
-              <div className="flex justify-end pt-4 border-t border-purple-500/20">
+              <div className="flex flex-col items-end gap-2 pt-4 border-t border-purple-500/20">
+                {!canApproveCompletion && detailedTask.status !== "DONE" && (
+                  <p className="text-[11px] text-amber-400">
+                    Only the assigned Tester, Manager, or Admin can approve and complete this task.
+                  </p>
+                )}
                 <Button
-                  disabled={!canCompleteTask || detailedTask.status === "DONE"}
+                  disabled={!canCompleteTask || !canApproveCompletion || detailedTask.status === "DONE"}
                   onClick={() => handleStatusChange("DONE")}
                   className="gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold"
                 >

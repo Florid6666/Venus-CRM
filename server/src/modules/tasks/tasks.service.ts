@@ -224,6 +224,17 @@ export class TasksService {
       await this.validateStatusTransition(task, dto.status, user);
     }
 
+    // Only the designated Tester (or Manager/Admin) may record testing approval.
+    if (dto.testingApproved !== undefined) {
+      const isTesterOrAdmin =
+        user.role.name === RoleName.ADMIN ||
+        user.role.name === RoleName.MANAGER ||
+        task.testerId === user.id;
+      if (!isTesterOrAdmin) {
+        throw new ForbiddenException("Only the assigned Tester, Manager, or Admin can approve testing.");
+      }
+    }
+
     // Update multiple assignees if provided
     if (dto.assigneeIds !== undefined) {
       await this.prisma.taskAssignee.deleteMany({ where: { taskId: id } });
@@ -251,8 +262,15 @@ export class TasksService {
         assigneeId: primaryAssigneeId,
         testerId: dto.testerId,
         testingNotes: dto.testingNotes,
-        testingApproved: dto.testingApproved,
-        testingCompletedAt: dto.testingApproved ? new Date() : undefined,
+        // Reaching DONE is itself gated to Tester/Manager/Admin (see validateStatusTransition),
+        // so it doubles as recording testing approval even if the caller didn't pass the flag.
+        testingApproved: dto.status === TaskStatus.DONE ? true : dto.testingApproved,
+        testingCompletedAt:
+          dto.status === TaskStatus.DONE || dto.testingApproved === true
+            ? new Date()
+            : dto.testingApproved === false
+              ? null
+              : undefined,
         dueDate: dto.dueDate === undefined ? undefined : dto.dueDate ? new Date(dto.dueDate) : null,
         position: dto.position,
         departmentId: dto.departmentId,
@@ -295,11 +313,13 @@ export class TasksService {
     nextStatus: TaskStatus,
     user: RequestUser,
   ) {
+    // Only the designated Tester (or a Manager/Admin override) may approve completion.
+    // Note: deliberately excludes task.creatorId — a developer who self-created/self-assigned
+    // a task must not be able to bypass tester validation just by being its creator.
     const isTesterOrAdmin =
       user.role.name === RoleName.ADMIN ||
       user.role.name === RoleName.MANAGER ||
-      task.testerId === user.id ||
-      task.creatorId === user.id;
+      task.testerId === user.id;
 
     // Strict Rule: Developer cannot directly complete a task
     if (nextStatus === TaskStatus.DONE) {

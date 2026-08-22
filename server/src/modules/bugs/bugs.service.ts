@@ -110,16 +110,20 @@ export class BugsService {
   async update(id: string, dto: UpdateBugDto, user: RequestUser) {
     const bug = await this.findOne(id);
 
-    // Workflow validation: Developers cannot set CLOSED
-    if (dto.status === BugStatus.CLOSED) {
+    // Workflow validation: only the designated Tester/Manager/Admin may close or reopen a bug.
+    // Developers (including the reporter/assignee) may only move a bug forward to TO_BE_TESTED.
+    if (dto.status === BugStatus.CLOSED || dto.status === BugStatus.REOPENED) {
       const isTesterOrAdmin =
         user.role.name === RoleName.ADMIN ||
         user.role.name === RoleName.MANAGER ||
-        bug.task.testerId === user.id ||
-        bug.reporterId === user.id;
+        bug.task.testerId === user.id;
 
       if (!isTesterOrAdmin) {
-        throw new ForbiddenException("Developers cannot directly close a bug. Please set status to 'To Be Tested' for Tester validation.");
+        throw new ForbiddenException(
+          dto.status === BugStatus.CLOSED
+            ? "Developers cannot directly close a bug. Please set status to 'To Be Tested' for Tester validation."
+            : "Only the assigned Tester, Manager, or Admin can reopen a bug.",
+        );
       }
     }
 

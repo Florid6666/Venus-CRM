@@ -382,6 +382,7 @@ export interface ProjectTask {
   priority: TaskPriority;
   position: number;
   assigneeId: string | null;
+  testerId: string | null;
   dueDate: string | null;
   taskListId: string | null;
   startDate: string | null;

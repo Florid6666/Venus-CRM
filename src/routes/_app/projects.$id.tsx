@@ -132,12 +132,14 @@ function ProjectDetailPage() {
       : findColumnOf(overId);
     if (!destStatus) return;
 
-    // Same rule as the task dialog's Status field -- an employee can't
-    // close a task (drag into Done) or reopen one (drag out of Done).
-    // Refusing the drop here (leaving `columns` untouched) snaps the card
-    // back to its original column instead of moving it optimistically and
-    // then failing server-side.
-    if (!canCloseTasks && (destStatus === "DONE" || sourceStatus === "DONE") && destStatus !== sourceStatus) {
+    // Same rule as the task dialog's Status field -- only the task's designated
+    // Tester (or a Manager/Admin) can close a task (drag into Done) or reopen
+    // one (drag out of Done). Refusing the drop here (leaving `columns`
+    // untouched) snaps the card back to its original column instead of moving
+    // it optimistically and then failing server-side.
+    const draggedTask = columns[sourceStatus].find((t) => t.id === activeId);
+    const canCloseThisTask = canCloseTasks || draggedTask?.testerId === currentUser?.id;
+    if (!canCloseThisTask && (destStatus === "DONE" || sourceStatus === "DONE") && destStatus !== sourceStatus) {
       return;
     }
 
