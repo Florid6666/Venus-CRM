@@ -15,6 +15,7 @@ import {
   MailX,
   Trash2,
   Plus,
+  Phone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,7 @@ import {
   useTestGithubConnection,
 } from "@/hooks/use-github";
 import { useApolloConnection, useConnectApollo, useDisconnectApollo } from "@/hooks/use-apollo";
+import { useJustCallConnection, useConnectJustCall, useDisconnectJustCall } from "@/hooks/use-telephony";
 import {
   useEmailSuppressions,
   useAddEmailSuppression,
@@ -172,6 +174,8 @@ function GeneralSettingsTab() {
       <GithubConnectionSection />
 
       <ApolloConnectionSection />
+
+      <JustCallConnectionSection />
 
       <EmailSuppressionSection />
 
@@ -654,6 +658,181 @@ function ApolloConnectionSection() {
           </div>
           <Button type="submit" disabled={connectApollo.isPending}>
             {connectApollo.isPending ? <Loader2 className="size-4 animate-spin" /> : "Connect Apollo"}
+          </Button>
+        </form>
+      )}
+
+      {notice && <p className="text-sm text-success">{notice}</p>}
+      {error && <p className="text-sm text-destructive">{error}</p>}
+    </div>
+  );
+}
+
+// ─── JustCall Connection (Sales calling) ────────────────────────────────────
+
+function JustCallConnectionSection() {
+  const { data: connection, isLoading } = useJustCallConnection();
+  const connectJustCall = useConnectJustCall();
+  const disconnectJustCall = useDisconnectJustCall();
+
+  const [apiKey, setApiKey] = useState("");
+  const [apiSecret, setApiSecret] = useState("");
+  const [webhookSecret, setWebhookSecret] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  async function handleConnect(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setNotice(null);
+    try {
+      await connectJustCall.mutateAsync({
+        apiKey: apiKey.trim(),
+        apiSecret: apiSecret.trim(),
+        webhookSecret: webhookSecret.trim() || undefined,
+      });
+      setApiKey("");
+      setApiSecret("");
+      setWebhookSecret("");
+      setNotice("JustCall connected — the Sales team can now call from the CRM.");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Could not connect to JustCall");
+    }
+  }
+
+  async function handleDisconnect() {
+    setError(null);
+    setNotice(null);
+    try {
+      await disconnectJustCall.mutateAsync();
+      setApiKey("");
+      setApiSecret("");
+      setWebhookSecret("");
+    } catch {
+      setError("Could not disconnect");
+    }
+  }
+
+  return (
+    <div className="bg-panel border border-border-subtle rounded-xl p-6 space-y-4">
+      <div className="flex items-start gap-2.5">
+        <Phone className="size-5 mt-0.5 shrink-0" />
+        <div>
+          <h2 className="text-sm font-semibold">JustCall Connection</h2>
+          <p className="text-xs text-text-dim mt-0.5 max-w-xl">
+            Connect JustCall so the Sales team can call leads directly from the CRM, with
+            calls, recordings, and dispositions logged automatically. Find your API key and
+            secret under JustCall → Settings → API. The webhook signing secret is optional --
+            only set it if JustCall's dashboard shows one for your webhook.
+          </p>
+        </div>
+      </div>
+
+      {isLoading ? (
+        <div className="flex items-center gap-2 text-sm text-text-dim">
+          <Loader2 className="size-4 animate-spin" /> Loading…
+        </div>
+      ) : connection?.connected ? (
+        <div className="space-y-4 max-w-xl">
+          <div className="flex items-center gap-2 rounded-md border border-success/30 bg-success/10 px-3 py-2">
+            <CheckCircle2 className="size-4 text-success shrink-0" />
+            <span className="text-sm">
+              Connected
+              {connection.connectedByName ? (
+                <span className="text-text-dim"> · by {connection.connectedByName}</span>
+              ) : null}
+            </span>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            className="text-destructive hover:text-destructive"
+            onClick={handleDisconnect}
+            disabled={disconnectJustCall.isPending}
+          >
+            {disconnectJustCall.isPending ? <Loader2 className="size-4 animate-spin" /> : "Disconnect"}
+          </Button>
+          <p className="text-[11px] text-text-dim">
+            To rotate the key/secret, just connect again with new values below.
+          </p>
+          <form onSubmit={handleConnect} className="space-y-3 border-t border-border-subtle pt-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="justcall-key">New API key</Label>
+              <Input
+                id="justcall-key"
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder="JustCall API key"
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="justcall-secret">New API secret</Label>
+              <Input
+                id="justcall-secret"
+                type="password"
+                value={apiSecret}
+                onChange={(e) => setApiSecret(e.target.value)}
+                placeholder="JustCall API secret"
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="justcall-webhook-secret">Webhook signing secret (optional)</Label>
+              <Input
+                id="justcall-webhook-secret"
+                type="password"
+                value={webhookSecret}
+                onChange={(e) => setWebhookSecret(e.target.value)}
+                placeholder="Leave blank if JustCall doesn't show one"
+              />
+            </div>
+            <Button type="submit" disabled={connectJustCall.isPending}>
+              {connectJustCall.isPending ? <Loader2 className="size-4 animate-spin" /> : "Reconnect"}
+            </Button>
+          </form>
+        </div>
+      ) : (
+        <form onSubmit={handleConnect} className="space-y-3 max-w-xl">
+          <div className="space-y-1.5">
+            <Label htmlFor="justcall-key">API key</Label>
+            <Input
+              id="justcall-key"
+              type="password"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+              placeholder="JustCall API key"
+              required
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="justcall-secret">API secret</Label>
+            <Input
+              id="justcall-secret"
+              type="password"
+              value={apiSecret}
+              onChange={(e) => setApiSecret(e.target.value)}
+              placeholder="JustCall API secret"
+              required
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="justcall-webhook-secret">Webhook signing secret (optional)</Label>
+            <Input
+              id="justcall-webhook-secret"
+              type="password"
+              value={webhookSecret}
+              onChange={(e) => setWebhookSecret(e.target.value)}
+              placeholder="Leave blank if JustCall doesn't show one"
+            />
+            <p className="text-[11px] text-text-dim">
+              Verified against JustCall before saving, and stored encrypted. Point JustCall's
+              webhook URL at {"{API URL}"}/webhooks/justcall once connected.
+            </p>
+          </div>
+          <Button type="submit" disabled={connectJustCall.isPending}>
+            {connectJustCall.isPending ? <Loader2 className="size-4 animate-spin" /> : "Connect JustCall"}
           </Button>
         </form>
       )}

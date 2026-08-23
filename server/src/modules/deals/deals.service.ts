@@ -11,7 +11,7 @@ import type { RequestUser } from "../../common/types/request-user.type";
 
 const dealInclude = {
   company: { select: { id: true, name: true } },
-  contact: { select: { id: true, firstName: true, lastName: true } },
+  contact: { select: { id: true, firstName: true, lastName: true, phone: true } },
   owner: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
 } as const;
 

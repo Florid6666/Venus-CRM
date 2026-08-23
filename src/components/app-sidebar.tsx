@@ -21,6 +21,7 @@ import {
   Camera,
   Send,
   GraduationCap,
+  Phone,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -67,6 +68,7 @@ const groups: Array<{
       { to: "/sales", label: "Team Performance", icon: TrendingUp },
       { to: "/outreach", label: "Outreach", icon: Rocket },
       { to: "/bulk-email", label: "Bulk Email", icon: Send },
+      { to: "/calls", label: "Calls", icon: Phone },
       { to: "/recruitment", label: "Recruitment", icon: Briefcase },
       { to: "/seo", label: "SEO Monitor", icon: Search },
       { to: "/dev", label: "Dev Sprints", icon: Code2 },
@@ -103,6 +105,7 @@ const DEPARTMENT_ROUTES: Record<string, string> = {
   "/sales": "Sales",
   "/outreach": "Sales",
   "/bulk-email": "Sales",
+  "/calls": "Sales",
 };
 
 const MANAGER_ONLY_ROUTES = new Set(["/sales"]);

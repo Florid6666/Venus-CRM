@@ -9,6 +9,7 @@
         "@dnd-kit/sortable": "^10.0.0",
         "@dnd-kit/utilities": "^3.2.2",
         "@hookform/resolvers": "^5.2.2",
+        "@justcall/justcall-dialer-sdk": "^1.4.2",
         "@oxc-parser/binding-win32-x64-msvc": "^0.120.0",
         "@radix-ui/react-accordion": "^1.2.12",
         "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -245,6 +246,8 @@
     "@jridgewell/sourcemap-codec": ["@jridgewell/sourcemap-codec@1.5.5", "", {}, "sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og=="],
 
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.31", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw=="],
+
+    "@justcall/justcall-dialer-sdk": ["@justcall/justcall-dialer-sdk@1.4.2", "", {}, "sha512-glNmQvLUPGv17kuSb2fbbNZqEVxL1VJBUz2jwAC8Dy0vi1zCUGRWo/SN3g9FTROjoSesXNxQHwwEWU12T0Mojw=="],
 
     "@lovable.dev/vite-plugin-dev-server-bridge": ["@lovable.dev/vite-plugin-dev-server-bridge@1.1.1", "", { "peerDependencies": { "vite": ">=5.0.0 <9.0.0" } }, "sha512-W/hA2ci4aVBBvB04/dZRYpEAYPn2w6i0FrhzP+RbaML53cQ21DT3ndMsgi0fkrzyC9sKJZ8LO81W6/nR1EZ3Ag=="],
 

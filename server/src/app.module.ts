@@ -59,6 +59,7 @@ import { DealDocumentsModule } from './modules/deal-documents/deal-documents.mod
 import { EmailSignatureModule } from './modules/email-signature/email-signature.module';
 import { ScreenRecordingsModule } from './modules/screen-recordings/screen-recordings.module';
 import { BugsModule } from './modules/bugs/bugs.module';
+import { TelephonyModule } from './modules/telephony/telephony.module';
 
 @Module({
   imports: [
@@ -119,6 +120,7 @@ import { BugsModule } from './modules/bugs/bugs.module';
     DealDocumentsModule,
     EmailSignatureModule,
     ScreenRecordingsModule,
+    TelephonyModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

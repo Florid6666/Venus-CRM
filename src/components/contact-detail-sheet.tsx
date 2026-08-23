@@ -11,6 +11,8 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { CallButton } from "@/components/telephony/call-button";
+import { CallHistoryTable } from "@/components/telephony/call-history-table";
 import type { Contact } from "@/lib/api/types";
 
 interface ContactDetailSheetProps {
@@ -134,7 +136,17 @@ export function ContactDetailSheet({ contact, onOpenChange, onEdit }: ContactDet
                 <DetailRow icon={Mail} label="Email" value={contact.email} href={`mailto:${contact.email}`} />
               )}
               {contact.phone && (
-                <DetailRow icon={Phone} label="Phone" value={contact.phone} href={`tel:${contact.phone}`} />
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <DetailRow icon={Phone} label="Phone" value={contact.phone} href={`tel:${contact.phone}`} />
+                  </div>
+                  <CallButton
+                    toNumber={contact.phone}
+                    displayName={`${contact.firstName} ${contact.lastName}`}
+                    contactId={contact.id}
+                    companyId={contact.company?.id}
+                  />
+                </div>
               )}
               {contact.linkedinUrl && (
                 <DetailRow
@@ -152,6 +164,12 @@ export function ContactDetailSheet({ contact, onOpenChange, onEdit }: ContactDet
               )}
               {contact.location && <DetailRow icon={MapPin} label="Location" value={contact.location} />}
               {contact.notes && <DetailRow icon={StickyNote} label="Notes" value={contact.notes} />}
+            </div>
+
+            {/* Call History */}
+            <div className="mt-6 pt-4 border-t border-border-subtle">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-text-dim mb-3">Call History</h3>
+              <CallHistoryTable contactId={contact.id} compact />
             </div>
 
             {/* Email History */}

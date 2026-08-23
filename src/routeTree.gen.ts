@@ -29,6 +29,7 @@ import { Route as AppHowToUseRouteImport } from './routes/_app/how-to-use'
 import { Route as AppDevRouteImport } from './routes/_app/dev'
 import { Route as AppCrmRouteImport } from './routes/_app/crm'
 import { Route as AppChatRouteImport } from './routes/_app/chat'
+import { Route as AppCallsRouteImport } from './routes/_app/calls'
 import { Route as AppBulkEmailRouteImport } from './routes/_app/bulk-email'
 import { Route as AppAttendanceRouteImport } from './routes/_app/attendance'
 import { Route as AppAnalyticsRouteImport } from './routes/_app/analytics'
@@ -138,6 +139,11 @@ const AppChatRoute = AppChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCallsRoute = AppCallsRouteImport.update({
+  id: '/calls',
+  path: '/calls',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppBulkEmailRoute = AppBulkEmailRouteImport.update({
   id: '/bulk-email',
   path: '/bulk-email',
@@ -195,6 +201,7 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AppAnalyticsRoute
   '/attendance': typeof AppAttendanceRoute
   '/bulk-email': typeof AppBulkEmailRoute
+  '/calls': typeof AppCallsRoute
   '/chat': typeof AppChatRoute
   '/crm': typeof AppCrmRoute
   '/dev': typeof AppDevRoute
@@ -224,6 +231,7 @@ export interface FileRoutesByTo {
   '/analytics': typeof AppAnalyticsRoute
   '/attendance': typeof AppAttendanceRoute
   '/bulk-email': typeof AppBulkEmailRoute
+  '/calls': typeof AppCallsRoute
   '/chat': typeof AppChatRoute
   '/crm': typeof AppCrmRoute
   '/dev': typeof AppDevRoute
@@ -256,6 +264,7 @@ export interface FileRoutesById {
   '/_app/analytics': typeof AppAnalyticsRoute
   '/_app/attendance': typeof AppAttendanceRoute
   '/_app/bulk-email': typeof AppBulkEmailRoute
+  '/_app/calls': typeof AppCallsRoute
   '/_app/chat': typeof AppChatRoute
   '/_app/crm': typeof AppCrmRoute
   '/_app/dev': typeof AppDevRoute
@@ -289,6 +298,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/attendance'
     | '/bulk-email'
+    | '/calls'
     | '/chat'
     | '/crm'
     | '/dev'
@@ -318,6 +328,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/attendance'
     | '/bulk-email'
+    | '/calls'
     | '/chat'
     | '/crm'
     | '/dev'
@@ -349,6 +360,7 @@ export interface FileRouteTypes {
     | '/_app/analytics'
     | '/_app/attendance'
     | '/_app/bulk-email'
+    | '/_app/calls'
     | '/_app/chat'
     | '/_app/crm'
     | '/_app/dev'
@@ -521,6 +533,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppChatRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/calls': {
+      id: '/_app/calls'
+      path: '/calls'
+      fullPath: '/calls'
+      preLoaderRoute: typeof AppCallsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/bulk-email': {
       id: '/_app/bulk-email'
       path: '/bulk-email'
@@ -592,6 +611,7 @@ interface AppRouteChildren {
   AppAnalyticsRoute: typeof AppAnalyticsRoute
   AppAttendanceRoute: typeof AppAttendanceRoute
   AppBulkEmailRoute: typeof AppBulkEmailRoute
+  AppCallsRoute: typeof AppCallsRoute
   AppChatRoute: typeof AppChatRoute
   AppCrmRoute: typeof AppCrmRoute
   AppDevRoute: typeof AppDevRoute
@@ -618,6 +638,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAnalyticsRoute: AppAnalyticsRoute,
   AppAttendanceRoute: AppAttendanceRoute,
   AppBulkEmailRoute: AppBulkEmailRoute,
+  AppCallsRoute: AppCallsRoute,
   AppChatRoute: AppChatRoute,
   AppCrmRoute: AppCrmRoute,
   AppDevRoute: AppDevRoute,

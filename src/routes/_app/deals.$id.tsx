@@ -25,6 +25,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DealActivityTimeline } from "@/components/deal-activity-timeline";
 import { ProposalUploadDialog } from "@/components/proposal-upload-dialog";
+import { CallButton } from "@/components/telephony/call-button";
 import {
   useApproveDeal,
   useArchiveDeal,
@@ -403,6 +404,17 @@ function DealDetailPage() {
           </SummaryRow>
           <SummaryRow icon={UserCircle2} label="Contact">
             {deal.contact ? `${deal.contact.firstName} ${deal.contact.lastName}` : "—"}
+            {deal.contact?.phone && (
+              <CallButton
+                toNumber={deal.contact.phone}
+                displayName={`${deal.contact.firstName} ${deal.contact.lastName}`}
+                contactId={deal.contact.id}
+                companyId={deal.companyId ?? undefined}
+                dealId={deal.id}
+                size="icon"
+                className="ml-1.5 size-6 align-middle"
+              />
+            )}
           </SummaryRow>
           <SummaryRow icon={CalendarClock} label="Expected close">
             {deal.expectedCloseDate ? new Date(deal.expectedCloseDate).toLocaleDateString() : "—"}

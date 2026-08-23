@@ -5,6 +5,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { TopBar } from "@/components/topbar";
 import { CommandPalette } from "@/components/command-palette";
 import { GlobalDialogs } from "@/components/global-dialogs";
+import { GlobalCallWidget } from "@/components/telephony/global-call-widget";
 import { useAuthStore } from "@/stores/auth-store";
 import { refresh as refreshAuth } from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/client";
@@ -87,6 +88,7 @@ function AppLayout() {
       </main>
       <CommandPalette />
       <GlobalDialogs />
+      <GlobalCallWidget />
     </div>
   );
 }

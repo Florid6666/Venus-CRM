@@ -523,7 +523,7 @@ export interface Deal {
   companyId: string | null;
   company: { id: string; name: string } | null;
   contactId: string | null;
-  contact: Pick<PersonRef, "id" | "firstName" | "lastName"> | null;
+  contact: (Pick<PersonRef, "id" | "firstName" | "lastName"> & { phone: string | null }) | null;
   ownerId: string;
   owner: PersonRef;
   notes: string | null;
@@ -791,6 +791,129 @@ export interface WorkSession {
   date: string; // Midnight UTC of the clock-in date
   createdAt: string;
   updatedAt: string;
+}
+
+// ─── Telephony (JustCall calling) ───────────────────────────────────────────
+
+export type CallDirection = "OUTBOUND" | "INBOUND";
+export type CallStatus =
+  | "INITIATED"
+  | "RINGING"
+  | "CONNECTED"
+  | "COMPLETED"
+  | "FAILED"
+  | "BUSY"
+  | "NO_ANSWER";
+
+export interface TelephonyConnectionStatus {
+  connected: boolean;
+  connectedByName: string | null;
+  connectedAt: string | null;
+}
+
+export interface PhoneNumber {
+  id: string;
+  provider: string;
+  providerId: string;
+  e164: string;
+  country: string;
+  label: string | null;
+  departmentId: string | null;
+  smsCapable: boolean;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface Call {
+  id: string;
+  provider: string;
+  providerCallId: string | null;
+  direction: CallDirection;
+  agentId: string;
+  agent: PersonRef;
+  contactId: string | null;
+  contact: { id: string; firstName: string; lastName: string; phone: string | null } | null;
+  companyId: string | null;
+  company: { id: string; name: string } | null;
+  dealId: string | null;
+  deal: { id: string; title: string } | null;
+  campaignId: string | null;
+  fromNumber: string | null;
+  toNumber: string;
+  status: CallStatus;
+  durationSec: number | null;
+  startedAt: string;
+  answeredAt: string | null;
+  endedAt: string | null;
+  recordingUrl: string | null;
+  recordingStatus: string | null;
+  disposition: string | null;
+  notes: string | null;
+  nextFollowUpAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const CALL_DISPOSITIONS = [
+  "Interested",
+  "Not Interested",
+  "Follow Up",
+  "Callback Requested",
+  "Wrong Number",
+  "No Requirement",
+  "Qualified",
+  "Converted",
+] as const;
+
+export interface CallLookupResult {
+  contactId: string;
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+  company: { id: string; name: string } | null;
+  deal: { id: string; title: string; value: number } | null;
+}
+
+export interface CallAnalytics {
+  totalCalls: number;
+  connected: number;
+  missed: number;
+  noAnswer: number;
+  totalTalkSec: number;
+  avgCallSec: number;
+  connectionRate: number;
+  byAgent: Array<{ agentId: string; name: string; calls: number; connected: number; talkSec: number }>;
+}
+
+export type CallCampaignLeadStatus = "PENDING" | "CALLING" | "DONE";
+
+export interface CallCampaignLead {
+  id: string;
+  campaignId: string;
+  contactId: string;
+  contact: { id: string; firstName: string; lastName: string; phone: string | null };
+  assignedToId: string | null;
+  assignedTo: PersonRef | null;
+  status: CallCampaignLeadStatus;
+  createdAt: string;
+}
+
+export interface CallCampaign {
+  id: string;
+  name: string;
+  departmentId: string | null;
+  creatorId: string;
+  creator: Pick<PersonRef, "id" | "firstName" | "lastName">;
+  createdAt: string;
+  _count: { leads: number };
+}
+
+export interface CallCampaignDetail extends CallCampaign {
+  leads: CallCampaignLead[];
+}
+
+export interface CallCampaignQueueLead extends CallCampaignLead {
+  campaign: { id: string; name: string };
 }
 
 // ─── Zoho Projects & Bug Tracking ──────────────────────────────────────────
