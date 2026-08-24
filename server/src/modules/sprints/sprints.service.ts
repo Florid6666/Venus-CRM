@@ -29,7 +29,6 @@ export class SprintsService {
         tasks: {
           include: {
             assignee: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
-            project: { select: { id: true, name: true } },
           },
         },
       },
@@ -45,7 +44,6 @@ export class SprintsService {
         tasks: {
           include: {
             assignee: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
-            project: { select: { id: true, name: true } },
           },
         },
       },
@@ -89,8 +87,8 @@ export class SprintsService {
         startDate: new Date(dto.startDate),
         endDate: new Date(dto.endDate),
         status: dto.status,
-        projectId: dto.projectId || null,
         departmentId,
+        projectId: dto.projectId || null,
       },
       include: {
         project: { select: { id: true, name: true } },
@@ -119,12 +117,8 @@ export class SprintsService {
         startDate: dto.startDate ? new Date(dto.startDate) : undefined,
         endDate: dto.endDate ? new Date(dto.endDate) : undefined,
         status: dto.status,
-        projectId: dto.projectId !== undefined ? (dto.projectId || null) : undefined,
       },
-      include: {
-        project: { select: { id: true, name: true } },
-        tasks: true,
-      },
+      include: { tasks: true },
     });
   }
 
@@ -135,10 +129,7 @@ export class SprintsService {
     const tasks = await this.prisma.task.findMany({
       where: {
         id: { in: taskIds },
-        OR: [
-          { departmentId: null },
-          { departmentId: sprint.departmentId },
-        ],
+        OR: [{ departmentId: null }, { departmentId: sprint.departmentId }],
       },
     });
 
@@ -161,7 +152,8 @@ export class SprintsService {
   // active sprint in the department, too broad an effect for any EMPLOYEE).
   private assertCanMutate(sprint: { departmentId: string }, user: RequestUser) {
     const isAdmin = user.role.name === RoleName.ADMIN;
-    const isDeptManager = user.role.name === RoleName.MANAGER && sprint.departmentId === user.department?.id;
+    const isDeptManager =
+      user.role.name === RoleName.MANAGER && sprint.departmentId === user.department?.id;
     if (!isAdmin && !isDeptManager) {
       throw new ForbiddenException("Only a Manager or Admin can modify sprints");
     }

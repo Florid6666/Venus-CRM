@@ -44,58 +44,62 @@ model User {
 
   headOfDepartments Department[] @relation("DepartmentHead")
 
-  refreshTokens       RefreshToken[]
-  passwordResetTokens PasswordResetToken[]
-  assignedTasks       Task[]               @relation("TaskAssignee")
-  createdTasks        Task[]               @relation("TaskCreator")
-  ownedProjects       Project[]            @relation("ProjectOwner")
-  ownedDeals          Deal[]               @relation("DealOwner")
-  loggedActivities    Activity[]           @relation("ActivityCreator")
-  sentMessages        ChatMessage[]        @relation("MessageSender")
-  dmChannels1         ChatChannel[]        @relation("dmUser1")
-  dmChannels2         ChatChannel[]        @relation("dmUser2")
-  kbArticles          KBArticle[]          @relation("KBArticleAuthor")
-  gitCommits          GitCommit[]          @relation("CommitAuthor")
-  seoContentBriefs    SeoContentBrief[]    @relation("BriefAssignee")
-  reviewedBriefs      SeoContentBrief[]    @relation("BriefReviewer")
-  loggedBacklinks     SeoBacklink[]        @relation("BacklinkLogger")
-  verifiedBacklinks   SeoBacklink[]        @relation("BacklinkVerifier")
-  memberOfProjects    Project[]            @relation("ProjectMembers")
-  ownedJobPostings    JobPosting[]         @relation("JobPostingOwner")
-  ownedCandidates     Candidate[]          @relation("CandidateOwner")
-  interviewsConducted Interview[]          @relation("InterviewInterviewer")
-  interviewsCreated   Interview[]          @relation("InterviewCreator")
-  offersCreated       Offer[]              @relation("OfferCreator")
-  leaveRequests       LeaveRequest[]       @relation("UserLeaveRequests")
-  reviewedLeaves      LeaveRequest[]       @relation("LeaveReviewer")
-  notifications       Notification[]       @relation("UserNotifications")
-  workSessions        WorkSession[]        @relation("UserWorkSessions")
-  taskUpdates         TaskUpdate[]         @relation("TaskUpdateAuthor")
-  timeLogs            TimeLog[]            @relation("TaskTimeLogAuthor")
-  timeLogsReviewed    TimeLog[]            @relation("TimeLogReviewer")
-  apolloConnections   ApolloConnection[]
-  emailTemplates      EmailTemplate[]
-  createdSequences    Sequence[]
-  sequenceEnrollments SequenceEnrollment[]
-  bulkEmailCampaigns  BulkEmailCampaign[]
-  contactImportBatches ContactImportBatch[]
-  emailConnection     UserEmailConnection?
-  loginEvents         LoginEvent[]         @relation("UserLoginEvents")
-  screenCaptures      ScreenCapture[]      @relation("UserScreenCaptures")
-  screenRecordings    ScreenRecording[]    @relation("UserScreenRecordings")
-  activityPings       ActivityPing[]       @relation("UserActivityPings")
-  chatChannelReads    ChatChannelRead[]
-  loginPhotos         LoginPhoto[]         @relation("UserLoginPhotos")
-  trainingVideos      TrainingVideo[]      @relation("TrainingVideoUploader")
-  dealDocuments       DealDocument[]       @relation("DealDocumentUploader")
-  signatureImages     EmailSignatureImage[] @relation("SignatureImageOwner")
-  taskAssignees       TaskAssignee[]       @relation("TaskAssigneeUser")
-  testedTasks         Task[]               @relation("TaskTester")
-  reportedBugs        Bug[]                @relation("BugReporter")
-  assignedBugs        Bug[]                @relation("BugAssignee")
-  bugComments         BugComment[]         @relation("BugCommentAuthor")
-  bugActivityLogs     BugActivityLog[]     @relation("BugActivityAuthor")
-  taskActivityLogs    TaskActivityLog[]    @relation("TaskActivityAuthor")
+  refreshTokens             RefreshToken[]
+  passwordResetTokens       PasswordResetToken[]
+  assignedTasks             Task[]                @relation("TaskAssignee")
+  createdTasks              Task[]                @relation("TaskCreator")
+  ownedProjects             Project[]             @relation("ProjectOwner")
+  ownedDeals                Deal[]                @relation("DealOwner")
+  loggedActivities          Activity[]            @relation("ActivityCreator")
+  taskAssignees             TaskAssignee[]        @relation("TaskAssigneeUser")
+  testedTasks               Task[]                @relation("TaskTester")
+  taskActivityLogs          TaskActivityLog[]     @relation("TaskActivityAuthor")
+  reportedBugs              Bug[]                 @relation("BugReporter")
+  assignedBugs              Bug[]                 @relation("BugAssignee")
+  bugComments               BugComment[]          @relation("BugCommentAuthor")
+  bugActivityLogs           BugActivityLog[]      @relation("BugActivityAuthor")
+  sentMessages              ChatMessage[]         @relation("MessageSender")
+  dmChannels1               ChatChannel[]         @relation("dmUser1")
+  dmChannels2               ChatChannel[]         @relation("dmUser2")
+  kbArticles                KBArticle[]           @relation("KBArticleAuthor")
+  gitCommits                GitCommit[]           @relation("CommitAuthor")
+  seoContentBriefs          SeoContentBrief[]     @relation("BriefAssignee")
+  reviewedBriefs            SeoContentBrief[]     @relation("BriefReviewer")
+  loggedBacklinks           SeoBacklink[]         @relation("BacklinkLogger")
+  verifiedBacklinks         SeoBacklink[]         @relation("BacklinkVerifier")
+  memberOfProjects          Project[]             @relation("ProjectMembers")
+  ownedJobPostings          JobPosting[]          @relation("JobPostingOwner")
+  ownedCandidates           Candidate[]           @relation("CandidateOwner")
+  interviewsConducted       Interview[]           @relation("InterviewInterviewer")
+  interviewsCreated         Interview[]           @relation("InterviewCreator")
+  offersCreated             Offer[]               @relation("OfferCreator")
+  leaveRequests             LeaveRequest[]        @relation("UserLeaveRequests")
+  reviewedLeaves            LeaveRequest[]        @relation("LeaveReviewer")
+  notifications             Notification[]        @relation("UserNotifications")
+  workSessions              WorkSession[]         @relation("UserWorkSessions")
+  taskUpdates               TaskUpdate[]          @relation("TaskUpdateAuthor")
+  timeLogs                  TimeLog[]             @relation("TaskTimeLogAuthor")
+  timeLogsReviewed          TimeLog[]             @relation("TimeLogReviewer")
+  apolloConnections         ApolloConnection[]
+  emailTemplates            EmailTemplate[]
+  createdSequences          Sequence[]
+  sequenceEnrollments       SequenceEnrollment[]
+  bulkEmailCampaigns        BulkEmailCampaign[]
+  contactImportBatches      ContactImportBatch[]
+  emailConnection           UserEmailConnection?
+  loginEvents               LoginEvent[]          @relation("UserLoginEvents")
+  screenCaptures            ScreenCapture[]       @relation("UserScreenCaptures")
+  screenRecordings          ScreenRecording[]     @relation("UserScreenRecordings")
+  activityPings             ActivityPing[]        @relation("UserActivityPings")
+  chatChannelReads          ChatChannelRead[]
+  loginPhotos               LoginPhoto[]          @relation("UserLoginPhotos")
+  trainingVideos            TrainingVideo[]       @relation("TrainingVideoUploader")
+  dealDocuments             DealDocument[]        @relation("DealDocumentUploader")
+  signatureImages           EmailSignatureImage[] @relation("SignatureImageOwner")
+  calls                     Call[]                @relation("CallAgent")
+  connectedJustCall         JustCallConnection[]
+  createdCallCampaigns      CallCampaign[]        @relation("CallCampaignCreator")
+  assignedCallCampaignLeads CallCampaignLead[]    @relation("CallCampaignLeadAssignee")
 
   // HTML appended to outbound email when the sender inserts their signature.
   // Stored per user rather than per template so one rep's sign-off follows
@@ -152,6 +156,7 @@ enum NotificationType {
   BUG_ASSIGNED
   BUG_FIXED
   BUG_REOPENED
+  FOLLOW_UP_DUE
   GENERAL
 }
 
@@ -276,20 +281,20 @@ enum AuthEventType {
 }
 
 model LoginEvent {
-  id        String        @id @default(uuid())
-  userId    String
-  user      User          @relation("UserLoginEvents", fields: [userId], references: [id], onDelete: Cascade)
-  type      AuthEventType
+  id          String        @id @default(uuid())
+  userId      String
+  user        User          @relation("UserLoginEvents", fields: [userId], references: [id], onDelete: Cascade)
+  type        AuthEventType
   // Best-effort request metadata (client IP + browser/device string). Nullable
   // because a logout may arrive without a resolvable session and headers can be
   // absent behind proxies.
-  ipAddress String?
-  userAgent String?
-  createdAt DateTime      @default(now())
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime      @default(now())
+  loginPhotos LoginPhoto[]
 
   @@index([userId, createdAt])
   @@index([createdAt])
-  loginPhotos LoginPhoto[]
 }
 
 // Disclosed webcam photo captured at the moment of login (see PROJECT_STATUS.md
@@ -304,29 +309,31 @@ model LoginPhoto {
   user         User        @relation("UserLoginPhotos", fields: [userId], references: [id], onDelete: Cascade)
   loginEventId String?
   loginEvent   LoginEvent? @relation(fields: [loginEventId], references: [id], onDelete: SetNull)
+  type         String?     @default("CLOCK_IN")
   storagePath  String
   capturedAt   DateTime    @default(now())
   createdAt    DateTime    @default(now())
 
   @@index([userId, capturedAt])
   @@index([capturedAt])
+  @@index([type])
 }
 
 model Department {
-  id                    String            @id @default(uuid())
-  name                  String            @unique
+  id                    String              @id @default(uuid())
+  name                  String              @unique
   description           String?
   // Display title for this department's MANAGER-tier role, e.g. "Head" for Dev
   // instead of the default "Manager" -- purely cosmetic, not a permission tier.
-  managerTitle          String            @default("Manager")
+  managerTitle          String              @default("Manager")
   // Current monthly $ target for this department, shown as actual-vs-target on
   // the Team Performance view. Null = no target set. Single current value, no
   // history -- matches this schema's pragmatic style (see Deal.value).
   monthlyTarget         Int?
-  dealApprovalThreshold Int               @default(10000)
+  dealApprovalThreshold Int                 @default(10000)
   headId                String?
-  head                  User?             @relation("DepartmentHead", fields: [headId], references: [id], onDelete: SetNull)
-  employees             User[]            @relation("DepartmentEmployees")
+  head                  User?               @relation("DepartmentHead", fields: [headId], references: [id], onDelete: SetNull)
+  employees             User[]              @relation("DepartmentEmployees")
   projects              Project[]
   tasks                 Task[]
   deals                 Deal[]
@@ -342,13 +349,15 @@ model Department {
   seoCompetitors        SeoCompetitor[]
   seoKpiGoals           SeoKpiGoal[]
   marketingCampaigns    MarketingCampaign[]
-  jobPostings           JobPosting[]      @relation("JobPostingOwningDepartment")
-  hiringJobPostings     JobPosting[]      @relation("JobPostingHiringDepartment")
+  jobPostings           JobPosting[]        @relation("JobPostingOwningDepartment")
+  hiringJobPostings     JobPosting[]        @relation("JobPostingHiringDepartment")
   candidates            Candidate[]
   interviews            Interview[]
   offers                Offer[]
   emailTemplates        EmailTemplate[]
   sequences             Sequence[]
+  phoneNumbers          PhoneNumber[]
+  callCampaigns         CallCampaign[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -421,32 +430,32 @@ enum ProjectStatus {
 }
 
 model Project {
-  id              String        @id @default(uuid())
-  name            String
-  description     String?
-  status          ProjectStatus @default(ACTIVE)
-  ownerId         String
-  owner           User          @relation("ProjectOwner", fields: [ownerId], references: [id])
-  tasks           Task[]
-  sprints         Sprint[]
-  taskLists       TaskList[]
-  startDate       DateTime?
-  dueDate         DateTime?
+  id                 String              @id @default(uuid())
+  name               String
+  description        String?
+  status             ProjectStatus       @default(ACTIVE)
+  ownerId            String
+  owner              User                @relation("ProjectOwner", fields: [ownerId], references: [id])
+  tasks              Task[]
+  taskLists          TaskList[]
+  sprints            Sprint[]
+  startDate          DateTime?
+  dueDate            DateTime?
   // Which department's work this belongs to -- drives department-scoped Manager
   // permissions (see DepartmentsService/ProjectsService.assertCanMutate). Null
   // (legacy rows, or explicitly unscoped) is manageable by any Manager.
-  departmentId    String?
-  department      Department?   @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  githubUrl       String?
-  projectPassword String?
-  members         User[]        @relation("ProjectMembers")
-  seoKeywords     SeoKeyword[]
-  seoContentBriefs SeoContentBrief[]
-  seoBacklinks    SeoBacklink[]
-  seoKpiGoals     SeoKpiGoal[]
+  departmentId       String?
+  department         Department?         @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  githubUrl          String?
+  projectPassword    String?
+  members            User[]              @relation("ProjectMembers")
+  seoKeywords        SeoKeyword[]
+  seoContentBriefs   SeoContentBrief[]
+  seoBacklinks       SeoBacklink[]
+  seoKpiGoals        SeoKpiGoal[]
   marketingCampaigns MarketingCampaign[]
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 }
 
 // A named grouping of tasks within a project (e.g. "Backend", "Design",
@@ -480,6 +489,9 @@ enum TaskPriority {
   URGENT
 }
 
+// A task can have several contributors (see Task.assignees) in addition to
+// its single primary Task.assigneeId -- additive, not a replacement, so
+// every existing single-assignee read/write keeps working unchanged.
 model TaskAssignee {
   id         String   @id @default(uuid())
   taskId     String
@@ -492,52 +504,68 @@ model TaskAssignee {
 }
 
 model Task {
-  id                 String       @id @default(uuid())
-  taskNumber         Int          @default(autoincrement())
+  id                 String             @id @default(uuid())
+  taskNumber         Int                @default(autoincrement())
   title              String
   description        String?
-  status             TaskStatus   @default(TODO)
-  priority           TaskPriority @default(MEDIUM)
-  position           Int          @default(0)
+  status             TaskStatus         @default(TODO)
+  priority           TaskPriority       @default(MEDIUM)
+  position           Int                @default(0)
   projectId          String?
-  project            Project?     @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  project            Project?           @relation(fields: [projectId], references: [id], onDelete: SetNull)
   assigneeId         String?
-  assignee           User?        @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  assignee           User?              @relation("TaskAssignee", fields: [assigneeId], references: [id])
   assignees          TaskAssignee[]
+  // The designated QA reviewer -- only this person (or a Manager/Admin) may
+  // approve testing or move the task to DONE; see TasksService.
   testerId           String?
-  tester             User?        @relation("TaskTester", fields: [testerId], references: [id], onDelete: SetNull)
+  tester             User?              @relation("TaskTester", fields: [testerId], references: [id], onDelete: SetNull)
   testingNotes       String?
   testingCompletedAt DateTime?
-  testingApproved    Boolean      @default(false)
+  testingApproved    Boolean            @default(false)
   creatorId          String
-  creator            User         @relation("TaskCreator", fields: [creatorId], references: [id])
+  creator            User               @relation("TaskCreator", fields: [creatorId], references: [id])
   dueDate            DateTime?
+  // Same department-scoping purpose as Project.departmentId -- independent of
+  // (not derived from) the task's project, since a task can exist without one.
   departmentId       String?
-  department         Department?  @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  department         Department?        @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   storyPoints        Int?
-  type               TaskType     @default(FEATURE)
+  type               TaskType           @default(FEATURE)
   sprintId           String?
-  sprint             Sprint?      @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+  sprint             Sprint?            @relation(fields: [sprintId], references: [id], onDelete: SetNull)
   epicId             String?
-  epic               Epic?        @relation(fields: [epicId], references: [id], onDelete: SetNull)
+  epic               Epic?              @relation(fields: [epicId], references: [id], onDelete: SetNull)
   releaseId          String?
-  release            Release?     @relation(fields: [releaseId], references: [id], onDelete: SetNull)
+  release            Release?           @relation(fields: [releaseId], references: [id], onDelete: SetNull)
+  // Schema-only for now -- no DTO exposes this yet (see MarketingCampaign).
   campaignId         String?
   campaign           MarketingCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
-  commits            GitCommit[]  @relation("TaskCommits")
+  commits            GitCommit[]        @relation("TaskCommits")
   parentId           String?
-  parent             Task?        @relation("TaskSubtasks", fields: [parentId], references: [id], onDelete: Cascade)
-  subtasks           Task[]       @relation("TaskSubtasks")
+  parent             Task?              @relation("TaskSubtasks", fields: [parentId], references: [id], onDelete: Cascade)
+  subtasks           Task[]             @relation("TaskSubtasks")
   updates            TaskUpdate[]
+  // Grouping within a project (see TaskList) -- independent of Sprint/Epic/
+  // Release, which are their own orthogonal groupings.
   taskListId         String?
-  taskList           TaskList?    @relation(fields: [taskListId], references: [id], onDelete: SetNull)
+  taskList           TaskList?          @relation(fields: [taskListId], references: [id], onDelete: SetNull)
+  // Only Project has startDate/dueDate historically; a task needs its own
+  // startDate (distinct from dueDate) for the Zoho-style task panel's Start/
+  // Due columns and Gantt-ish views.
   startDate          DateTime?
-  tags               String[]     @default([])
+  // Freeform labels, not a normalized Tag model -- this app has no
+  // cross-task tag search/reuse requirement yet, so a plain array column is
+  // simplest (same pragmatic style as Contact.category/priority).
+  tags               String[]           @default([])
   timeLogs           TimeLog[]
   bugs               Bug[]
   activityLogs       TaskActivityLog[]
-  createdAt          DateTime     @default(now())
-  updatedAt          DateTime     @updatedAt
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  // --- extensibility for later phases (Files module) ---
+  // files    Attachment[]
 }
 
 enum TimeLogStatus {
@@ -546,10 +574,20 @@ enum TimeLogStatus {
   REJECTED
 }
 
+// A single day's worth of time a user spent on a task -- manual entry (not a
+// live start/stop timer), same "type in what happened" pragmatic style as
+// TaskUpdate, but numeric (minutes) instead of freeform text. Always
+// self-logged (userId is always the actor, never set on someone else's
+// behalf) -- same personal/attendance-like privacy stance as WorkSession.
+// Goes through the same review workflow as LeaveRequest: starts PENDING,
+// a Manager/Admin approves or rejects it, and it's locked from further
+// self-edits once reviewed.
 model TimeLog {
   id           String        @id @default(uuid())
   taskId       String
   task         Task          @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  // Not currently read/written by any endpoint -- ported for schema parity
+  // only, same unwired state it's in upstream.
   subtaskId    String?
   userId       String
   user         User          @relation("TaskTimeLogAuthor", fields: [userId], references: [id], onDelete: Cascade)
@@ -570,6 +608,11 @@ model TimeLog {
   @@index([userId, date])
 }
 
+// Free-text daily progress note an assignee/creator/manager posts on a task
+// while it's in progress -- tasks here are multi-day work items (not closed
+// in one sitting), so this is how "what did you do on this task today"
+// gets captured. Grouped by createdAt's calendar day in the UI rather than
+// a separate editable date field, same pragmatic style as WorkSession.
 model TaskUpdate {
   id            String   @id @default(uuid())
   taskId        String
@@ -577,6 +620,10 @@ model TaskUpdate {
   userId        String
   user          User     @relation("TaskUpdateAuthor", fields: [userId], references: [id], onDelete: Cascade)
   content       String
+  // The structured fields below are not currently read/written by any
+  // endpoint -- the daily-update form composes everything into `content`
+  // instead (see ZohoTaskPagePanel). Ported for schema parity only, same
+  // unwired state it's in upstream.
   date          DateTime @default(now())
   workCompleted String?
   nextPlan      String?
@@ -585,6 +632,17 @@ model TaskUpdate {
   attachments   String[] @default([])
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+model TaskActivityLog {
+  id        String   @id @default(uuid())
+  taskId    String
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation("TaskActivityAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
 }
 
 enum BugSeverity {
@@ -611,6 +669,12 @@ enum BugStatus {
   REOPENED
 }
 
+// A bug found while testing a Task -- deliberately its own tracked entity
+// rather than reusing Task/TaskType.BUG, since a bug has its own lifecycle
+// (severity/priority/status, a reporter distinct from an assignee, its own
+// comment thread) layered on top of the task it was found on. See
+// TasksService.validateStatusTransition -- a task can't reach DONE while it
+// still has an open (non-CLOSED) bug.
 model Bug {
   id           String           @id @default(uuid())
   bugNumber    Int              @default(autoincrement())
@@ -618,6 +682,8 @@ model Bug {
   description  String?
   taskId       String
   task         Task             @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  // Not currently read/written by any endpoint beyond being stored on
+  // create -- there is no Subtask model distinct from Task itself.
   subtaskId    String?
   reporterId   String
   reporter     User             @relation("BugReporter", fields: [reporterId], references: [id], onDelete: Cascade)
@@ -656,17 +722,6 @@ model BugActivityLog {
   createdAt DateTime @default(now())
 }
 
-model TaskActivityLog {
-  id        String   @id @default(uuid())
-  taskId    String
-  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User     @relation("TaskActivityAuthor", fields: [userId], references: [id], onDelete: Cascade)
-  action    String
-  details   String?
-  createdAt DateTime @default(now())
-}
-
 enum LeadSource {
   MANUAL
   APOLLO
@@ -686,41 +741,49 @@ model Company {
   linkedinUrl   String?
   employeeCount Int?
   source        LeadSource @default(MANUAL)
+  calls         Call[]
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
 }
 
 model Contact {
-  id          String     @id @default(uuid())
-  firstName   String
-  lastName    String
-  email       String?
-  phone       String?
-  title       String?
-  companyId   String?
-  company     Company?   @relation(fields: [companyId], references: [id], onDelete: SetNull)
-  deals       Deal[]
+  id                  String               @id @default(uuid())
+  firstName           String
+  lastName            String
+  email               String?
+  phone               String?
+  title               String?
+  companyId           String?
+  company             Company?             @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  deals               Deal[]
   // Apollo.io enrichment fields -- apolloId is used to dedupe re-imports.
-  apolloId    String?    @unique
-  linkedinUrl String?
-  source      LeadSource @default(MANUAL)
-  enrichedAt  DateTime?
+  apolloId            String?              @unique
+  linkedinUrl         String?
+  source              LeadSource           @default(MANUAL)
+  enrichedAt          DateTime?
   // Freeform catch-all for anything a spreadsheet import couldn't map to a
   // real field -- e.g. "Follow UP notes" from a LinkedIn export, or extra
   // columns the user chose to keep rather than discard.
-  notes       String?
+  notes               String?
   // Common spreadsheet-import fields -- all freeform strings rather than
   // enums since imported values (e.g. priority tiers like "A+"/"B") vary by
   // source sheet, not a fixed set this app controls.
-  location    String?
-  website     String?
-  category    String?
-  priority    String?
-  enrollments SequenceEnrollment[]
+  location            String?
+  website             String?
+  category            String?
+  priority            String?
+  enrollments         SequenceEnrollment[]
   bulkEmailRecipients BulkEmailRecipient[]
   activities          Activity[]           @relation("ActivityContact")
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  calls               Call[]
+  callCampaignLeads   CallCampaignLead[]
+  syncedEmails        SyncedEmail[]
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  // EmailSyncEngineService looks up a Contact by address on every synced
+  // message -- worth indexing once real sync traffic exists.
+  @@index([email])
 }
 
 // One row per spreadsheet import run -- an audit trail so "did that import
@@ -761,31 +824,40 @@ enum DealApprovalStatus {
 }
 
 model Deal {
-  id                String             @id @default(uuid())
-  title             String
+  id                 String             @id @default(uuid())
+  title              String
   // Whole currency units (no cents). Prisma's Decimal type doesn't round-trip
   // through JSON/TS cleanly; Int matches this codebase's pragmatic style.
-  value             Int                @default(0)
-  stage             DealStage          @default(NEW_LEAD)
-  position          Int                @default(0)
-  companyId         String?
-  company           Company?           @relation(fields: [companyId], references: [id], onDelete: SetNull)
-  contactId         String?
-  contact           Contact?           @relation(fields: [contactId], references: [id], onDelete: SetNull)
-  ownerId           String
-  owner             User               @relation("DealOwner", fields: [ownerId], references: [id])
-  notes             String?
-  expectedCloseDate DateTime?
+  value              Int                @default(0)
+  stage              DealStage          @default(NEW_LEAD)
+  position           Int                @default(0)
+  companyId          String?
+  company            Company?           @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  contactId          String?
+  contact            Contact?           @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  ownerId            String
+  owner              User               @relation("DealOwner", fields: [ownerId], references: [id])
+  notes              String?
+  expectedCloseDate  DateTime?
+  // Rep-set date for DealFollowUpsService's hourly reminder cron. Cleared
+  // (set to null) by the rep dismissing/rescheduling, not by the cron itself.
+  followUpAt         DateTime?
+  // Set when the reminder notification+email actually fires for the current
+  // followUpAt value, so the hourly cron doesn't re-notify every tick. Reset
+  // to null whenever followUpAt changes (see DealsService.update).
+  followUpNotifiedAt DateTime?
   // Same department-scoping purpose as Project.departmentId.
-  departmentId      String?
-  department        Department?        @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  departmentId       String?
+  department         Department?        @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   // Set automatically by DealsService when stage transitions to/from WON or
   // LOST -- unlike updatedAt, which changes on any edit and can't answer
   // "when did this deal actually close" for dashboard stats.
-  closedAt          DateTime?
-  approvalStatus    DealApprovalStatus @default(NONE)
-  activities        Activity[]
-  documents         DealDocument[]
+  closedAt           DateTime?
+  approvalStatus     DealApprovalStatus @default(NONE)
+  activities         Activity[]
+  documents          DealDocument[]
+  calls              Call[]
+  syncedEmails       SyncedEmail[]
 
   seoSourceKeywordId String?
   seoSourceKeyword   SeoKeyword? @relation("SeoSourceDeals", fields: [seoSourceKeywordId], references: [id], onDelete: SetNull)
@@ -845,47 +917,47 @@ model DealDocument {
 }
 
 model Activity {
-  id         String       @id @default(uuid())
-  type       ActivityType
-  content    String
+  id          String       @id @default(uuid())
+  type        ActivityType
+  content     String
   // Who was actually spoken to. Optional because a NOTE often isn't about one
   // person, and every SYSTEM row is written by the server with nobody on the
   // other end. SetNull rather than Cascade: deleting a contact shouldn't erase
   // the record that the call happened.
-  contactId  String?
-  contact    Contact?     @relation("ActivityContact", fields: [contactId], references: [id], onDelete: SetNull)
+  contactId   String?
+  contact     Contact?     @relation("ActivityContact", fields: [contactId], references: [id], onDelete: SetNull)
   // Free text rather than an enum -- teams word their call dispositions
   // differently, and the frontend offers a suggested list without forcing it.
-  outcome    String?
+  outcome     String?
   // Call/meeting length in minutes. Null for notes and system rows.
   durationMin Int?
-  occurredAt DateTime     @default(now())
-  dealId     String
+  occurredAt  DateTime     @default(now())
+  dealId      String
   // Cascade, unlike this schema's usual SetNull for optional FKs: an activity
   // has no independent meaning without its deal (contrast Task.projectId,
   // which SetNulls since a task still means something without a project).
-  deal       Deal         @relation(fields: [dealId], references: [id], onDelete: Cascade)
-  creatorId  String
-  creator    User         @relation("ActivityCreator", fields: [creatorId], references: [id])
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
+  deal        Deal         @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  creatorId   String
+  creator     User         @relation("ActivityCreator", fields: [creatorId], references: [id])
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
 
 model ChatChannel {
-  id           String        @id @default(uuid())
+  id           String            @id @default(uuid())
   name         String? // null for DMs
   description  String?
-  isDM         Boolean       @default(false)
+  isDM         Boolean           @default(false)
   departmentId String?
-  department   Department?   @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  department   Department?       @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   messages     ChatMessage[]
   reads        ChatChannelRead[]
   dmUserId1    String?
-  dmUser1      User?         @relation("dmUser1", fields: [dmUserId1], references: [id], onDelete: SetNull)
+  dmUser1      User?             @relation("dmUser1", fields: [dmUserId1], references: [id], onDelete: SetNull)
   dmUserId2    String?
-  dmUser2      User?         @relation("dmUser2", fields: [dmUserId2], references: [id], onDelete: SetNull)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  dmUser2      User?             @relation("dmUser2", fields: [dmUserId2], references: [id], onDelete: SetNull)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
 
   @@unique([dmUserId1, dmUserId2])
 }
@@ -967,29 +1039,10 @@ model GitCommit {
   createdAt   DateTime @default(now())
 }
 
-enum ContentBriefStatus {
-  DRAFT
-  ASSIGNED
-  IN_PROGRESS
-  UNDER_REVIEW
-  REVISION_REQUIRED
-  APPROVED
-  PUBLISHED
-}
-
-enum BacklinkVerificationStatus {
-  PENDING
-  VERIFIED
-  REJECTED
-  LOST
-}
-
-enum SlaStatus {
-  ON_TRACK
-  AT_RISK
-  OVERDUE
-}
-
+// A named marketing push a SeoKeyword/SeoContentBrief/Task can optionally be
+// tagged under. Schema-only for now -- the /seo frontend's Campaigns tab
+// manages campaigns as local component state, not through this model or any
+// backend endpoint (no seo-marketing-campaigns module exists).
 model MarketingCampaign {
   id           String            @id @default(uuid())
   name         String
@@ -1014,6 +1067,8 @@ model MarketingCampaign {
 model SeoKeyword {
   id           String             @id @default(uuid())
   term         String
+  // Schema-only -- the create-keyword form has an intent picker but never
+  // sends this field, so it's never actually written.
   searchIntent String?            @default("INFORMATIONAL")
   volume       Int                @default(0)
   difficulty   Int                @default(0)
@@ -1035,16 +1090,27 @@ model SeoAudit {
   id           String     @id @default(uuid())
   url          String
   score        Int        @default(0)
-  issues       String
+  issues       String // JSON string of issues
   departmentId String
   department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
   runAt        DateTime   @default(now())
+}
+
+enum BacklinkVerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  LOST
 }
 
 model SeoBacklink {
   id              String                     @id @default(uuid())
   sourceUrl       String
   targetUrl       String
+  // anchorText/spamScore/linkType/loggedBy/verifiedBy/rejectionNote are
+  // schema-only -- the backlinks tab's "verification" is local component
+  // state (handleVerifyBacklink never calls the API), and create/update DTOs
+  // don't expose these fields.
   anchorText      String?
   domainAuthority Int                        @default(0)
   spamScore       Int                        @default(0)
@@ -1063,10 +1129,30 @@ model SeoBacklink {
   updatedAt       DateTime                   @updatedAt
 }
 
+enum ContentBriefStatus {
+  DRAFT
+  ASSIGNED
+  IN_PROGRESS
+  UNDER_REVIEW
+  REVISION_REQUIRED
+  APPROVED
+  PUBLISHED
+}
+
+enum SlaStatus {
+  ON_TRACK
+  AT_RISK
+  OVERDUE
+}
+
 model SeoContentBrief {
   id                String                    @id @default(uuid())
   title             String
   targetKeyword     String
+  // secondaryKeywords/targetWordCount/outlineJson/slaStatus/publishDate/
+  // campaignId/reviewerId/rejectionReason are schema-only -- create/update
+  // DTOs only expose title/targetKeyword/status/dueDate/assigneeId/content,
+  // so ValidationPipe's whitelist strips the rest before they reach Prisma.
   secondaryKeywords String[]                  @default([])
   targetWordCount   Int                       @default(1500)
   outlineJson       String?
@@ -1092,6 +1178,8 @@ model SeoContentBrief {
   updatedAt         DateTime                  @updatedAt
 }
 
+// Schema-only -- the "Content QA Drawer" checklist is local component state
+// (qaChecks), never fetched from or persisted to this table.
 model ContentBriefQaCheck {
   id           String          @id @default(uuid())
   briefId      String
@@ -1103,6 +1191,8 @@ model ContentBriefQaCheck {
   updatedAt    DateTime        @updatedAt
 }
 
+// Schema-only -- no endpoint reads or writes this; the Reports tab computes
+// its numbers from existing keyword/brief/backlink data instead.
 model ContentPerformanceMetric {
   id              String          @id @default(uuid())
   briefId         String          @unique
@@ -1126,6 +1216,8 @@ model SeoCompetitor {
   updatedAt    DateTime   @updatedAt
 }
 
+// Schema-only -- like MarketingCampaign, no backend module or frontend API
+// call manages this; the Executive Reporting tab doesn't fetch KPI goals.
 model SeoKpiGoal {
   id           String     @id @default(uuid())
   title        String
@@ -1338,24 +1430,93 @@ model ApolloConnection {
 // sequence engines look this up by the campaign/enrollment owner at send
 // time and refuse to send if it's missing or unverified (see
 // EmailConnectionsService.requireVerifiedTransport).
+enum EmailConnectionType {
+  SMTP
+  OAUTH_GOOGLE
+  OAUTH_MICROSOFT
+}
+
 model UserEmailConnection {
-  id                String    @id @default(uuid())
-  userId            String    @unique
-  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  smtpHost          String
-  smtpPort          Int
-  smtpSecure        Boolean   @default(true)
-  smtpUsername      String
-  encryptedPassword String
-  passwordIv        String
-  passwordAuthTag   String
-  fromName          String?
-  fromEmail         String
-  verified          Boolean   @default(false)
-  lastVerifiedAt    DateTime?
-  lastError         String?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id             String              @id @default(uuid())
+  userId         String              @unique
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  connectionType EmailConnectionType @default(SMTP)
+
+  // SMTP fields -- only populated when connectionType = SMTP. Optional so
+  // an OAuth-connected row doesn't need dummy values here.
+  smtpHost          String?
+  smtpPort          Int?
+  smtpSecure        Boolean?
+  smtpUsername      String?
+  encryptedPassword String?
+  passwordIv        String?
+  passwordAuthTag   String?
+
+  // OAuth fields -- only populated when connectionType = OAUTH_GOOGLE or
+  // OAUTH_MICROSOFT. Refresh token encrypted the same way as the SMTP
+  // password (see common/utils/token-crypto.ts).
+  oauthAccessToken      String?
+  encryptedRefreshToken String?
+  refreshTokenIv        String?
+  refreshTokenAuthTag   String?
+  oauthExpiresAt        DateTime?
+  oauthScope            String?
+  // The actual mailbox address returned by the provider -- may differ from
+  // User.email (a personal Gmail vs. a work login, for instance).
+  providerAccountEmail  String?
+
+  // Sync bookkeeping for EmailSyncEngineService (OAuth connections only).
+  // syncCursor is opaque and provider-specific: Gmail's historyId, or
+  // Microsoft Graph's @odata.deltaLink.
+  lastSyncedAt DateTime?
+  syncCursor   String?
+
+  fromName       String?
+  fromEmail      String?
+  verified       Boolean   @default(false)
+  lastVerifiedAt DateTime?
+  lastError      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  syncedEmails SyncedEmail[]
+}
+
+enum EmailDirection {
+  SENT
+  RECEIVED
+}
+
+// A message synced from a connected OAuth mailbox (sent or received),
+// linked to a Contact/Deal by address match at ingest time -- see
+// EmailSyncEngineService. Named SyncedEmail, not EmailMessage, to avoid
+// colliding with the EmailMessage interface already exported by
+// common/utils/mailer.ts (the outbound send payload shape).
+model SyncedEmail {
+  id                String              @id @default(uuid())
+  connectionId      String
+  connection        UserEmailConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  direction         EmailDirection
+  fromAddress       String
+  toAddresses       String[]
+  ccAddresses       String[]
+  subject           String
+  bodyPreview       String
+  bodyHtml          String?
+  providerMessageId String
+  threadId          String?
+  occurredAt        DateTime
+  contactId         String?
+  contact           Contact?            @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  dealId            String?
+  deal              Deal?               @relation(fields: [dealId], references: [id], onDelete: SetNull)
+  isRead            Boolean             @default(false)
+  createdAt         DateTime            @default(now())
+
+  @@unique([connectionId, providerMessageId])
+  @@index([contactId])
+  @@index([dealId])
+  @@index([threadId])
 }
 
 // Permanent cache of Apollo API responses, keyed by call type + a normalized
@@ -1385,21 +1546,21 @@ model ApolloCache {
 // rendered by common/utils/merge-fields.ts. Will also be referenced by
 // SequenceStep once Sequences are built.
 model EmailTemplate {
-  id           String      @id @default(uuid())
-  name         String
-  subject      String
-  bodyHtml     String
+  id                 String              @id @default(uuid())
+  name               String
+  subject            String
+  bodyHtml           String
   // Append the *sender's* signature at send time rather than baking one
   // person's sign-off into a template the whole team shares.
-  appendSignature Boolean  @default(false)
-  departmentId String?
-  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
-  creatorId    String
-  creator      User        @relation(fields: [creatorId], references: [id])
-  sequenceSteps SequenceStep[]
+  appendSignature    Boolean             @default(false)
+  departmentId       String?
+  department         Department?         @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  creatorId          String
+  creator            User                @relation(fields: [creatorId], references: [id])
+  sequenceSteps      SequenceStep[]
   bulkEmailCampaigns BulkEmailCampaign[]
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
 }
 
 enum SuppressionReason {
@@ -1443,18 +1604,18 @@ enum SendStatus {
 // firing delayDays after the previous one (or after enrollment, for the
 // first step). Same collaborative Sales-team ownership as EmailTemplate.
 model Sequence {
-  id           String         @id @default(uuid())
+  id           String               @id @default(uuid())
   name         String
   description  String?
-  status       SequenceStatus @default(DRAFT)
+  status       SequenceStatus       @default(DRAFT)
   departmentId String?
-  department   Department?    @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  department   Department?          @relation(fields: [departmentId], references: [id], onDelete: SetNull)
   creatorId    String
-  creator      User           @relation(fields: [creatorId], references: [id])
+  creator      User                 @relation(fields: [creatorId], references: [id])
   steps        SequenceStep[]
   enrollments  SequenceEnrollment[]
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
 }
 
 model SequenceStep {
@@ -1514,6 +1675,9 @@ model SequenceSend {
   sentAt       DateTime           @default(now())
   openedAt     DateTime?
   openCount    Int                @default(0)
+  // Mirrors BulkEmailRecipient.dismissedAt -- same "I already followed up
+  // some other way" escape hatch for the Sequences half of the panel.
+  dismissedAt  DateTime?
 }
 
 enum BulkSendStatus {
@@ -1529,22 +1693,22 @@ enum BulkSendStatus {
 // see Contact.source) and/or a pasted/CSV list of raw emails not yet in the
 // CRM. Same collaborative Sales-team ownership as EmailTemplate/Sequence.
 model BulkEmailCampaign {
-  id         String              @id @default(uuid())
-  name       String
+  id              String               @id @default(uuid())
+  name            String
   // Exactly one of (templateId) or (subject + bodyHtml) is set -- enforced in
   // BulkEmailService.create, since Prisma can't express an XOR constraint.
   // A saved template is the reusable path; the inline pair is a one-off email
   // written for this campaign's recipients only, which deliberately never
   // lands in the shared Templates list.
-  templateId String?
-  template   EmailTemplate?      @relation(fields: [templateId], references: [id], onDelete: Restrict)
-  subject    String?
-  bodyHtml   String?
-  appendSignature Boolean @default(false)
-  creatorId  String
-  creator    User                @relation(fields: [creatorId], references: [id])
-  recipients BulkEmailRecipient[]
-  createdAt  DateTime            @default(now())
+  templateId      String?
+  template        EmailTemplate?       @relation(fields: [templateId], references: [id], onDelete: Restrict)
+  subject         String?
+  bodyHtml        String?
+  appendSignature Boolean              @default(false)
+  creatorId       String
+  creator         User                 @relation(fields: [creatorId], references: [id])
+  recipients      BulkEmailRecipient[]
+  createdAt       DateTime             @default(now())
 }
 
 // One row per recipient targeted by a campaign. The engine (a periodic job,
@@ -1566,6 +1730,10 @@ model BulkEmailRecipient {
   sentAt       DateTime?
   openedAt     DateTime?
   openCount    Int               @default(0)
+  // Set when a rep clears this from the Follow-Up Reminders panel -- e.g.
+  // they called the lead instead of re-emailing. Excluded from
+  // BulkEmailService.findFollowUps once set; nothing else reads it.
+  dismissedAt  DateTime?
   createdAt    DateTime          @default(now())
 
   @@index([campaignId, status])
@@ -1604,4 +1772,177 @@ model TrainingVideo {
   updatedAt   DateTime @updatedAt
 
   @@index([category, position])
+}
+
+// ─── Telephony (JustCall click-to-call for Sales) ────────────────────────────
+
+// Singleton row holding the company's JustCall API credentials, same
+// encrypted-at-rest shape as ApolloConnection/GithubConnection. Only status
+// (whether it's connected, who connected it) is ever returned to clients;
+// the key/secret stay server-side and are decrypted per-call by
+// JustCallProviderService. webhookSecret (if JustCall issues one) verifies
+// inbound webhook authenticity -- see JustCallWebhookController.
+model JustCallConnection {
+  id                 String   @id @default("justcall-connection")
+  encryptedApiKey    String
+  apiKeyIv           String
+  apiKeyAuthTag      String
+  encryptedApiSecret String
+  apiSecretIv        String
+  apiSecretAuthTag   String
+  webhookSecret      String?
+  connectedById      String?
+  connectedBy        User?    @relation(fields: [connectedById], references: [id], onDelete: SetNull)
+  connectedAt        DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+// A business phone number purchased/configured in JustCall and registered
+// here so Admin can label it (e.g. "Sales - US") and assign a default per
+// department -- the caller ID a lead in that country actually sees, letting
+// India-based reps present a local US/Canada presence (see §4 of the plan).
+model PhoneNumber {
+  id           String      @id @default(uuid())
+  provider     String      @default("justcall")
+  providerId   String      @unique
+  e164         String      @unique
+  country      String
+  label        String?
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  smsCapable   Boolean     @default(true)
+  active       Boolean     @default(true)
+  createdAt    DateTime    @default(now())
+
+  @@index([departmentId])
+}
+
+enum CallDirection {
+  OUTBOUND
+  INBOUND
+}
+
+enum CallStatus {
+  INITIATED
+  RINGING
+  CONNECTED
+  COMPLETED
+  FAILED
+  BUSY
+  NO_ANSWER
+}
+
+// One row per phone call, independent of Activity -- deliberately NOT reusing
+// Activity because Activity.dealId is required, and a call can happen before
+// any deal exists (a cold Apollo lead, a bare Contact). When a call IS tied
+// to a deal, CallsService also writes a matching Activity(type=CALL) so the
+// deal timeline keeps showing it exactly like it does today -- see
+// CallsService.logToDealTimeline. providerCallId is the idempotency key the
+// webhook handler upserts against, so a redelivered JustCall event can never
+// create a duplicate row.
+model Call {
+  id              String        @id @default(uuid())
+  provider        String        @default("justcall")
+  providerCallId  String?       @unique
+  direction       CallDirection @default(OUTBOUND)
+  agentId         String
+  agent           User          @relation("CallAgent", fields: [agentId], references: [id])
+  contactId       String?
+  contact         Contact?      @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  companyId       String?
+  company         Company?      @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  dealId          String?
+  deal            Deal?         @relation(fields: [dealId], references: [id], onDelete: SetNull)
+  // Nullable: the JustCall Dialer SDK's dialNumber() takes only the
+  // destination -- the agent's outbound caller-ID line is chosen inside
+  // JustCall's own iframe UI, not passed by our code. fromNumber starts null
+  // and is filled in once the webhook delivers the real value.
+  fromNumber      String?
+  toNumber        String
+  status          CallStatus    @default(INITIATED)
+  durationSec     Int?
+  startedAt       DateTime      @default(now())
+  answeredAt      DateTime?
+  endedAt         DateTime?
+  recordingUrl    String?
+  recordingStatus String?
+  // Free text, same "teams word dispositions differently" rationale as
+  // Activity.outcome -- the frontend offers a suggested list without forcing it.
+  disposition     String?
+  notes           String?
+  nextFollowUpAt  DateTime?
+  events          CallEvent[]
+  // Set when this call was placed from a power-dialer queue (see
+  // CallCampaign) -- lets CallsService.updateDisposition mark the matching
+  // CallCampaignLead DONE and auto-advance the queue without a second FK.
+  campaignId      String?
+  campaign        CallCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([contactId])
+  @@index([dealId])
+  @@index([agentId, startedAt])
+  @@index([status])
+  @@index([campaignId])
+}
+
+// A power-dialer calling list (§11/§12) -- an ordered set of leads a rep (or
+// a team) works through, one call at a time, without manually looking up
+// each next number. Deliberately simple for this first pass: a lead is
+// either assigned to one agent or left unassigned (any Sales member can
+// claim it via CallsService/CallCampaignsService.claimNext) -- round-robin
+// auto-distribution is a later refinement, not required to make the queue
+// usable today.
+model CallCampaign {
+  id           String             @id @default(uuid())
+  name         String
+  departmentId String?
+  department   Department?        @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  creatorId    String
+  creator      User               @relation("CallCampaignCreator", fields: [creatorId], references: [id])
+  leads        CallCampaignLead[]
+  calls        Call[]
+  createdAt    DateTime           @default(now())
+
+  @@index([departmentId])
+}
+
+enum CallCampaignLeadStatus {
+  PENDING
+  CALLING
+  DONE
+}
+
+model CallCampaignLead {
+  id           String                 @id @default(uuid())
+  campaignId   String
+  campaign     CallCampaign           @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  contactId    String
+  contact      Contact                @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  assignedToId String?
+  assignedTo   User?                  @relation("CallCampaignLeadAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  status       CallCampaignLeadStatus @default(PENDING)
+  createdAt    DateTime               @default(now())
+  updatedAt    DateTime               @updatedAt
+
+  @@unique([campaignId, contactId])
+  @@index([campaignId, status])
+  @@index([assignedToId, status])
+}
+
+// Raw webhook payload audit trail for one Call -- troubleshooting/auditing
+// per the plan's §18. providerEventId (when JustCall sends one) is the
+// per-event idempotency key, separate from Call.providerCallId which is the
+// per-call idempotency key.
+model CallEvent {
+  id              String   @id @default(uuid())
+  callId          String
+  call            Call     @relation(fields: [callId], references: [id], onDelete: Cascade)
+  providerEventId String?  @unique
+  eventType       String
+  payload         Json
+  createdAt       DateTime @default(now())
+
+  @@index([callId])
 }

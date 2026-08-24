@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { BugStatus, RoleName, TaskPriority, TaskStatus } from "@prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
 import { CreateTaskDto } from "./dto/create-task.dto";
@@ -39,7 +44,9 @@ const taskInclude = {
           reporter: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
           assignee: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
           comments: {
-            include: { user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
+            include: {
+              user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+            },
             orderBy: { createdAt: "asc" as const },
           },
         },
@@ -58,7 +65,9 @@ const taskInclude = {
       reporter: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
       assignee: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
       comments: {
-        include: { user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } },
+        include: {
+          user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+        },
         orderBy: { createdAt: "asc" as const },
       },
       activityLogs: {
@@ -162,7 +171,9 @@ export class TasksService {
     const position = await this.nextPosition(dto.projectId ?? null, status);
 
     // Primary assignee
-    const primaryAssigneeId = dto.assigneeId ?? (dto.assigneeIds && dto.assigneeIds.length > 0 ? dto.assigneeIds[0] : undefined);
+    const primaryAssigneeId =
+      dto.assigneeId ??
+      (dto.assigneeIds && dto.assigneeIds.length > 0 ? dto.assigneeIds[0] : undefined);
 
     const task = await this.prisma.task.create({
       data: {
@@ -209,7 +220,12 @@ export class TasksService {
     });
 
     // Notify assignees
-    const assigneesToNotify = dto.assigneeIds && dto.assigneeIds.length > 0 ? dto.assigneeIds : (primaryAssigneeId ? [primaryAssigneeId] : []);
+    const assigneesToNotify =
+      dto.assigneeIds && dto.assigneeIds.length > 0
+        ? dto.assigneeIds
+        : primaryAssigneeId
+          ? [primaryAssigneeId]
+          : [];
     for (const uId of assigneesToNotify) {
       if (uId !== creator.id) {
         await this.notifications.create({
@@ -240,7 +256,9 @@ export class TasksService {
         user.role.name === RoleName.MANAGER ||
         task.testerId === user.id;
       if (!isTesterOrAdmin) {
-        throw new ForbiddenException("Only the assigned Tester, Manager, or Admin can approve testing.");
+        throw new ForbiddenException(
+          "Only the assigned Tester, Manager, or Admin can approve testing.",
+        );
       }
     }
 
@@ -256,9 +274,12 @@ export class TasksService {
       }
     }
 
-    const primaryAssigneeId = dto.assigneeId !== undefined
-      ? dto.assigneeId
-      : (dto.assigneeIds && dto.assigneeIds.length > 0 ? dto.assigneeIds[0] : task.assigneeId);
+    const primaryAssigneeId =
+      dto.assigneeId !== undefined
+        ? dto.assigneeId
+        : dto.assigneeIds && dto.assigneeIds.length > 0
+          ? dto.assigneeIds[0]
+          : task.assigneeId;
 
     const updated = await this.prisma.task.update({
       where: { id },
@@ -288,7 +309,8 @@ export class TasksService {
         sprintId: dto.sprintId,
         parentId: dto.parentId,
         taskListId: dto.taskListId,
-        startDate: dto.startDate === undefined ? undefined : dto.startDate ? new Date(dto.startDate) : null,
+        startDate:
+          dto.startDate === undefined ? undefined : dto.startDate ? new Date(dto.startDate) : null,
         tags: dto.tags,
       },
       include: taskInclude,
@@ -318,12 +340,18 @@ export class TasksService {
   }
 
   private async validateStatusTransition(
-    task: { id: string; status: TaskStatus; parentId: string | null; testerId: string | null; creatorId: string },
+    task: {
+      id: string;
+      status: TaskStatus;
+      parentId: string | null;
+      testerId: string | null;
+      creatorId: string;
+    },
     nextStatus: TaskStatus,
     user: RequestUser,
   ) {
     // Only the designated Tester (or a Manager/Admin override) may approve completion.
-    // Note: deliberately excludes task.creatorId — a developer who self-created/self-assigned
+    // Note: deliberately excludes task.creatorId -- a developer who self-created/self-assigned
     // a task must not be able to bypass tester validation just by being its creator.
     const isTesterOrAdmin =
       user.role.name === RoleName.ADMIN ||
@@ -333,7 +361,9 @@ export class TasksService {
     // Strict Rule: Developer cannot directly complete a task
     if (nextStatus === TaskStatus.DONE) {
       if (!isTesterOrAdmin) {
-        throw new ForbiddenException("Developers cannot directly mark a task as Completed. Please set status to 'Ready for Testing' for Tester validation.");
+        throw new ForbiddenException(
+          "Developers cannot directly mark a task as Completed. Please set status to 'Ready for Testing' for Tester validation.",
+        );
       }
 
       // Fetch task with full relation checks for completion logic
@@ -356,27 +386,35 @@ export class TasksService {
       if (!fullTask) throw new NotFoundException("Task not found");
 
       // Requirement 1: Daily updates check (at least 1 update on task or subtasks)
-      const totalUpdates = fullTask.updates.length + fullTask.subtasks.reduce((acc, st) => acc + st.updates.length, 0);
+      const totalUpdates =
+        fullTask.updates.length + fullTask.subtasks.reduce((acc, st) => acc + st.updates.length, 0);
       if (totalUpdates === 0) {
-        throw new BadRequestException("Task cannot be completed until at least one Daily Work Update is logged.");
+        throw new BadRequestException(
+          "Task cannot be completed until at least one Daily Work Update is logged.",
+        );
       }
 
       // Requirement 2: Time logs check (at least 1 time log on task or subtasks)
-      const totalTimeLogs = fullTask.timeLogs.length + fullTask.subtasks.reduce((acc, st) => acc + st.timeLogs.length, 0);
+      const totalTimeLogs =
+        fullTask.timeLogs.length +
+        fullTask.subtasks.reduce((acc, st) => acc + st.timeLogs.length, 0);
       if (totalTimeLogs === 0) {
-        throw new BadRequestException("Task cannot be completed until at least one Time Log is submitted.");
+        throw new BadRequestException(
+          "Task cannot be completed until at least one Time Log is submitted.",
+        );
       }
 
       // Requirement 3: Open bugs check (0 open, assigned, in_progress, to_be_tested, retesting, reopened bugs)
-      const allBugs = [
-        ...fullTask.bugs,
-        ...fullTask.subtasks.flatMap((st) => st.bugs),
-      ];
+      const allBugs = [...fullTask.bugs, ...fullTask.subtasks.flatMap((st) => st.bugs)];
       const openBugs = allBugs.filter((b) => b.status !== BugStatus.CLOSED);
 
       if (openBugs.length > 0) {
-        const openList = openBugs.map((b) => `Bug #${b.bugNumber} (${b.status}): "${b.title}"`).join(", ");
-        throw new BadRequestException(`Cannot complete task! ${openBugs.length} unresolved bug(s) remain: ${openList}. All bugs must be CLOSED first.`);
+        const openList = openBugs
+          .map((b) => `Bug #${b.bugNumber} (${b.status}): "${b.title}"`)
+          .join(", ");
+        throw new BadRequestException(
+          `Cannot complete task! ${openBugs.length} unresolved bug(s) remain: ${openList}. All bugs must be CLOSED first.`,
+        );
       }
 
       // Requirement 4: Parent Task Completion Rule (all subtasks must be DONE)
@@ -384,7 +422,9 @@ export class TasksService {
         const unfinishedSubtasks = fullTask.subtasks.filter((st) => st.status !== TaskStatus.DONE);
         if (unfinishedSubtasks.length > 0) {
           const subList = unfinishedSubtasks.map((st) => `"${st.title}" (${st.status})`).join(", ");
-          throw new BadRequestException(`Cannot complete parent task! ${unfinishedSubtasks.length} subtask(s) are incomplete: ${subList}.`);
+          throw new BadRequestException(
+            `Cannot complete parent task! ${unfinishedSubtasks.length} subtask(s) are incomplete: ${subList}.`,
+          );
         }
       }
     }
@@ -453,11 +493,17 @@ export class TasksService {
   }
 
   private assertCanMutate(
-    task: { creatorId: string; assigneeId: string | null; departmentId: string | null; testerId?: string | null },
+    task: {
+      creatorId: string;
+      assigneeId: string | null;
+      departmentId: string | null;
+      testerId?: string | null;
+    },
     user: RequestUser,
   ) {
     const isAdmin = user.role.name === RoleName.ADMIN;
-    const isOwner = task.creatorId === user.id || task.assigneeId === user.id || task.testerId === user.id;
+    const isOwner =
+      task.creatorId === user.id || task.assigneeId === user.id || task.testerId === user.id;
     const isDeptManager =
       user.role.name === RoleName.MANAGER &&
       (task.departmentId === null || task.departmentId === user.department?.id);

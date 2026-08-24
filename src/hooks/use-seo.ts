@@ -55,6 +55,17 @@ export function useCreateBacklink() {
   });
 }
 
+export function useUpdateBacklink() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...backlink }: Partial<seoApi.SeoBacklink> & { id: string }) =>
+      seoApi.updateBacklink(id, backlink),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["seo-backlinks", data.departmentId] });
+    },
+  });
+}
+
 export function useContentBriefs(departmentId?: string) {
   return useQuery({
     queryKey: ["seo-content-briefs", departmentId],
@@ -94,6 +105,38 @@ export function useGenerateContentBrief() {
   });
 }
 
+export function useAddQaCheck() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ briefId, checkItem }: { briefId: string; checkItem: string }) =>
+      seoApi.addQaCheck(briefId, checkItem),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["seo-content-briefs"] });
+    },
+  });
+}
+
+export function useToggleQaCheck() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ checkId, isPassed }: { checkId: string; isPassed: boolean }) =>
+      seoApi.toggleQaCheck(checkId, isPassed),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["seo-content-briefs"] });
+    },
+  });
+}
+
+export function useRemoveQaCheck() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (checkId: string) => seoApi.removeQaCheck(checkId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["seo-content-briefs"] });
+    },
+  });
+}
+
 export function useCompetitors(departmentId?: string) {
   return useQuery({
     queryKey: ["seo-competitors", departmentId],
@@ -108,6 +151,88 @@ export function useCreateCompetitor() {
     mutationFn: seoApi.createCompetitor,
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["seo-competitors", variables.departmentId] });
+    },
+  });
+}
+
+export function useCampaigns(departmentId?: string) {
+  return useQuery({
+    queryKey: ["seo-marketing-campaigns", departmentId],
+    queryFn: () => seoApi.getCampaigns(departmentId),
+    enabled: !!departmentId,
+  });
+}
+
+export function useCreateCampaign() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: seoApi.createCampaign,
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ["seo-marketing-campaigns", variables.departmentId],
+      });
+    },
+  });
+}
+
+export function useUpdateCampaign() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...campaign }: Partial<seoApi.MarketingCampaign> & { id: string }) =>
+      seoApi.updateCampaign(id, campaign),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({
+        queryKey: ["seo-marketing-campaigns", data.departmentId],
+      });
+    },
+  });
+}
+
+export function useDeleteCampaign() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => seoApi.deleteCampaign(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["seo-marketing-campaigns"] });
+    },
+  });
+}
+
+export function useKpiGoals(departmentId?: string) {
+  return useQuery({
+    queryKey: ["seo-kpi-goals", departmentId],
+    queryFn: () => seoApi.getKpiGoals(departmentId),
+    enabled: !!departmentId,
+  });
+}
+
+export function useCreateKpiGoal() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: seoApi.createKpiGoal,
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["seo-kpi-goals", variables.departmentId] });
+    },
+  });
+}
+
+export function useUpdateKpiGoal() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...goal }: Partial<seoApi.SeoKpiGoal> & { id: string }) =>
+      seoApi.updateKpiGoal(id, goal),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["seo-kpi-goals", data.departmentId] });
+    },
+  });
+}
+
+export function useDeleteKpiGoal() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => seoApi.deleteKpiGoal(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["seo-kpi-goals"] });
     },
   });
 }

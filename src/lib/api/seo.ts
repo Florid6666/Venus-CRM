@@ -186,6 +186,13 @@ export function createBacklink(backlink: Partial<SeoBacklink>): Promise<SeoBackl
   });
 }
 
+export function updateBacklink(id: string, backlink: Partial<SeoBacklink>): Promise<SeoBacklink> {
+  return apiFetch<SeoBacklink>(`/seo-backlinks/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(backlink),
+  });
+}
+
 // Content Brief endpoints
 export function getContentBriefs(departmentId?: string): Promise<SeoContentBrief[]> {
   const params = departmentId ? `?departmentId=${departmentId}` : "";
@@ -199,7 +206,10 @@ export function createContentBrief(brief: Partial<SeoContentBrief>): Promise<Seo
   });
 }
 
-export function updateContentBrief(id: string, brief: Partial<SeoContentBrief>): Promise<SeoContentBrief> {
+export function updateContentBrief(
+  id: string,
+  brief: Partial<SeoContentBrief>,
+): Promise<SeoContentBrief> {
   return apiFetch<SeoContentBrief>(`/seo-content-briefs/${id}`, {
     method: "PATCH",
     body: JSON.stringify(brief),
@@ -209,6 +219,27 @@ export function updateContentBrief(id: string, brief: Partial<SeoContentBrief>):
 export function generateContentBrief(id: string): Promise<SeoContentBrief> {
   return apiFetch<SeoContentBrief>(`/seo-content-briefs/${id}/generate`, {
     method: "POST",
+  });
+}
+
+// Content Brief QA checklist endpoints
+export function addQaCheck(briefId: string, checkItem: string): Promise<ContentBriefQaCheck> {
+  return apiFetch<ContentBriefQaCheck>(`/seo-content-briefs/${briefId}/qa-checks`, {
+    method: "POST",
+    body: JSON.stringify({ checkItem }),
+  });
+}
+
+export function toggleQaCheck(checkId: string, isPassed: boolean): Promise<ContentBriefQaCheck> {
+  return apiFetch<ContentBriefQaCheck>(`/seo-content-briefs/qa-checks/${checkId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ isPassed }),
+  });
+}
+
+export function removeQaCheck(checkId: string): Promise<void> {
+  return apiFetch<void>(`/seo-content-briefs/qa-checks/${checkId}`, {
+    method: "DELETE",
   });
 }
 
@@ -223,4 +254,55 @@ export function createCompetitor(competitor: Partial<SeoCompetitor>): Promise<Se
     method: "POST",
     body: JSON.stringify(competitor),
   });
+}
+
+// Marketing Campaign endpoints
+export function getCampaigns(departmentId?: string): Promise<MarketingCampaign[]> {
+  const params = departmentId ? `?departmentId=${departmentId}` : "";
+  return apiFetch<MarketingCampaign[]>(`/seo-marketing-campaigns${params}`);
+}
+
+export function createCampaign(campaign: Partial<MarketingCampaign>): Promise<MarketingCampaign> {
+  return apiFetch<MarketingCampaign>("/seo-marketing-campaigns", {
+    method: "POST",
+    body: JSON.stringify(campaign),
+  });
+}
+
+export function updateCampaign(
+  id: string,
+  campaign: Partial<MarketingCampaign>,
+): Promise<MarketingCampaign> {
+  return apiFetch<MarketingCampaign>(`/seo-marketing-campaigns/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(campaign),
+  });
+}
+
+export function deleteCampaign(id: string): Promise<void> {
+  return apiFetch<void>(`/seo-marketing-campaigns/${id}`, { method: "DELETE" });
+}
+
+// SEO KPI Goal endpoints
+export function getKpiGoals(departmentId?: string): Promise<SeoKpiGoal[]> {
+  const params = departmentId ? `?departmentId=${departmentId}` : "";
+  return apiFetch<SeoKpiGoal[]>(`/seo-kpi-goals${params}`);
+}
+
+export function createKpiGoal(goal: Partial<SeoKpiGoal>): Promise<SeoKpiGoal> {
+  return apiFetch<SeoKpiGoal>("/seo-kpi-goals", {
+    method: "POST",
+    body: JSON.stringify(goal),
+  });
+}
+
+export function updateKpiGoal(id: string, goal: Partial<SeoKpiGoal>): Promise<SeoKpiGoal> {
+  return apiFetch<SeoKpiGoal>(`/seo-kpi-goals/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(goal),
+  });
+}
+
+export function deleteKpiGoal(id: string): Promise<void> {
+  return apiFetch<void>(`/seo-kpi-goals/${id}`, { method: "DELETE" });
 }

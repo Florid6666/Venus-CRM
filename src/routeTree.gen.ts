@@ -21,19 +21,21 @@ import { Route as AppSeoRouteImport } from './routes/_app/seo'
 import { Route as AppScreenMonitoringRouteImport } from './routes/_app/screen-monitoring'
 import { Route as AppSalesRouteImport } from './routes/_app/sales'
 import { Route as AppRecruitmentRouteImport } from './routes/_app/recruitment'
+import { Route as AppProjectsRouteImport } from './routes/_app/projects'
 import { Route as AppOutreachRouteImport } from './routes/_app/outreach'
 import { Route as AppLoginPhotosRouteImport } from './routes/_app/login-photos'
 import { Route as AppKnowledgeRouteImport } from './routes/_app/knowledge'
+import { Route as AppInboxRouteImport } from './routes/_app/inbox'
 import { Route as AppHrRouteImport } from './routes/_app/hr'
 import { Route as AppHowToUseRouteImport } from './routes/_app/how-to-use'
 import { Route as AppDevRouteImport } from './routes/_app/dev'
 import { Route as AppCrmRouteImport } from './routes/_app/crm'
 import { Route as AppChatRouteImport } from './routes/_app/chat'
+import { Route as AppCallsRouteImport } from './routes/_app/calls'
 import { Route as AppBulkEmailRouteImport } from './routes/_app/bulk-email'
 import { Route as AppAttendanceRouteImport } from './routes/_app/attendance'
 import { Route as AppAnalyticsRouteImport } from './routes/_app/analytics'
 import { Route as AppAccountRouteImport } from './routes/_app/account'
-import { Route as AppProjectsIndexRouteImport } from './routes/_app/projects.index'
 import { Route as AppDealsIndexRouteImport } from './routes/_app/deals.index'
 import { Route as AppProjectsIdRouteImport } from './routes/_app/projects.$id'
 import { Route as AppDealsIdRouteImport } from './routes/_app/deals.$id'
@@ -98,6 +100,11 @@ const AppRecruitmentRoute = AppRecruitmentRouteImport.update({
   path: '/recruitment',
   getParentRoute: () => AppRoute,
 } as any)
+const AppProjectsRoute = AppProjectsRouteImport.update({
+  id: '/projects',
+  path: '/projects',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppOutreachRoute = AppOutreachRouteImport.update({
   id: '/outreach',
   path: '/outreach',
@@ -111,6 +118,11 @@ const AppLoginPhotosRoute = AppLoginPhotosRouteImport.update({
 const AppKnowledgeRoute = AppKnowledgeRouteImport.update({
   id: '/knowledge',
   path: '/knowledge',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppInboxRoute = AppInboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
   getParentRoute: () => AppRoute,
 } as any)
 const AppHrRoute = AppHrRouteImport.update({
@@ -138,6 +150,11 @@ const AppChatRoute = AppChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => AppRoute,
 } as any)
+const AppCallsRoute = AppCallsRouteImport.update({
+  id: '/calls',
+  path: '/calls',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppBulkEmailRoute = AppBulkEmailRouteImport.update({
   id: '/bulk-email',
   path: '/bulk-email',
@@ -158,20 +175,15 @@ const AppAccountRoute = AppAccountRouteImport.update({
   path: '/account',
   getParentRoute: () => AppRoute,
 } as any)
-const AppProjectsIndexRoute = AppProjectsIndexRouteImport.update({
-  id: '/projects/',
-  path: '/projects/',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppDealsIndexRoute = AppDealsIndexRouteImport.update({
   id: '/deals/',
   path: '/deals/',
   getParentRoute: () => AppRoute,
 } as any)
 const AppProjectsIdRoute = AppProjectsIdRouteImport.update({
-  id: '/projects/$id',
-  path: '/projects/$id',
-  getParentRoute: () => AppRoute,
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppProjectsRoute,
 } as any)
 const AppDealsIdRoute = AppDealsIdRouteImport.update({
   id: '/deals/$id',
@@ -195,14 +207,17 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AppAnalyticsRoute
   '/attendance': typeof AppAttendanceRoute
   '/bulk-email': typeof AppBulkEmailRoute
+  '/calls': typeof AppCallsRoute
   '/chat': typeof AppChatRoute
   '/crm': typeof AppCrmRoute
   '/dev': typeof AppDevRoute
   '/how-to-use': typeof AppHowToUseRoute
   '/hr': typeof AppHrRoute
+  '/inbox': typeof AppInboxRoute
   '/knowledge': typeof AppKnowledgeRoute
   '/login-photos': typeof AppLoginPhotosRoute
   '/outreach': typeof AppOutreachRoute
+  '/projects': typeof AppProjectsRouteWithChildren
   '/recruitment': typeof AppRecruitmentRoute
   '/sales': typeof AppSalesRoute
   '/screen-monitoring': typeof AppScreenMonitoringRoute
@@ -212,7 +227,6 @@ export interface FileRoutesByFullPath {
   '/deals/$id': typeof AppDealsIdRoute
   '/projects/$id': typeof AppProjectsIdRoute
   '/deals/': typeof AppDealsIndexRoute
-  '/projects/': typeof AppProjectsIndexRoute
 }
 export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
@@ -224,14 +238,17 @@ export interface FileRoutesByTo {
   '/analytics': typeof AppAnalyticsRoute
   '/attendance': typeof AppAttendanceRoute
   '/bulk-email': typeof AppBulkEmailRoute
+  '/calls': typeof AppCallsRoute
   '/chat': typeof AppChatRoute
   '/crm': typeof AppCrmRoute
   '/dev': typeof AppDevRoute
   '/how-to-use': typeof AppHowToUseRoute
   '/hr': typeof AppHrRoute
+  '/inbox': typeof AppInboxRoute
   '/knowledge': typeof AppKnowledgeRoute
   '/login-photos': typeof AppLoginPhotosRoute
   '/outreach': typeof AppOutreachRoute
+  '/projects': typeof AppProjectsRouteWithChildren
   '/recruitment': typeof AppRecruitmentRoute
   '/sales': typeof AppSalesRoute
   '/screen-monitoring': typeof AppScreenMonitoringRoute
@@ -242,7 +259,6 @@ export interface FileRoutesByTo {
   '/deals/$id': typeof AppDealsIdRoute
   '/projects/$id': typeof AppProjectsIdRoute
   '/deals': typeof AppDealsIndexRoute
-  '/projects': typeof AppProjectsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -256,14 +272,17 @@ export interface FileRoutesById {
   '/_app/analytics': typeof AppAnalyticsRoute
   '/_app/attendance': typeof AppAttendanceRoute
   '/_app/bulk-email': typeof AppBulkEmailRoute
+  '/_app/calls': typeof AppCallsRoute
   '/_app/chat': typeof AppChatRoute
   '/_app/crm': typeof AppCrmRoute
   '/_app/dev': typeof AppDevRoute
   '/_app/how-to-use': typeof AppHowToUseRoute
   '/_app/hr': typeof AppHrRoute
+  '/_app/inbox': typeof AppInboxRoute
   '/_app/knowledge': typeof AppKnowledgeRoute
   '/_app/login-photos': typeof AppLoginPhotosRoute
   '/_app/outreach': typeof AppOutreachRoute
+  '/_app/projects': typeof AppProjectsRouteWithChildren
   '/_app/recruitment': typeof AppRecruitmentRoute
   '/_app/sales': typeof AppSalesRoute
   '/_app/screen-monitoring': typeof AppScreenMonitoringRoute
@@ -274,7 +293,6 @@ export interface FileRoutesById {
   '/_app/deals/$id': typeof AppDealsIdRoute
   '/_app/projects/$id': typeof AppProjectsIdRoute
   '/_app/deals/': typeof AppDealsIndexRoute
-  '/_app/projects/': typeof AppProjectsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -289,14 +307,17 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/attendance'
     | '/bulk-email'
+    | '/calls'
     | '/chat'
     | '/crm'
     | '/dev'
     | '/how-to-use'
     | '/hr'
+    | '/inbox'
     | '/knowledge'
     | '/login-photos'
     | '/outreach'
+    | '/projects'
     | '/recruitment'
     | '/sales'
     | '/screen-monitoring'
@@ -306,7 +327,6 @@ export interface FileRouteTypes {
     | '/deals/$id'
     | '/projects/$id'
     | '/deals/'
-    | '/projects/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/forgot-password'
@@ -318,14 +338,17 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/attendance'
     | '/bulk-email'
+    | '/calls'
     | '/chat'
     | '/crm'
     | '/dev'
     | '/how-to-use'
     | '/hr'
+    | '/inbox'
     | '/knowledge'
     | '/login-photos'
     | '/outreach'
+    | '/projects'
     | '/recruitment'
     | '/sales'
     | '/screen-monitoring'
@@ -336,7 +359,6 @@ export interface FileRouteTypes {
     | '/deals/$id'
     | '/projects/$id'
     | '/deals'
-    | '/projects'
   id:
     | '__root__'
     | '/_app'
@@ -349,14 +371,17 @@ export interface FileRouteTypes {
     | '/_app/analytics'
     | '/_app/attendance'
     | '/_app/bulk-email'
+    | '/_app/calls'
     | '/_app/chat'
     | '/_app/crm'
     | '/_app/dev'
     | '/_app/how-to-use'
     | '/_app/hr'
+    | '/_app/inbox'
     | '/_app/knowledge'
     | '/_app/login-photos'
     | '/_app/outreach'
+    | '/_app/projects'
     | '/_app/recruitment'
     | '/_app/sales'
     | '/_app/screen-monitoring'
@@ -367,7 +392,6 @@ export interface FileRouteTypes {
     | '/_app/deals/$id'
     | '/_app/projects/$id'
     | '/_app/deals/'
-    | '/_app/projects/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -465,6 +489,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRecruitmentRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/projects': {
+      id: '/_app/projects'
+      path: '/projects'
+      fullPath: '/projects'
+      preLoaderRoute: typeof AppProjectsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/outreach': {
       id: '/_app/outreach'
       path: '/outreach'
@@ -484,6 +515,13 @@ declare module '@tanstack/react-router' {
       path: '/knowledge'
       fullPath: '/knowledge'
       preLoaderRoute: typeof AppKnowledgeRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/inbox': {
+      id: '/_app/inbox'
+      path: '/inbox'
+      fullPath: '/inbox'
+      preLoaderRoute: typeof AppInboxRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/hr': {
@@ -521,6 +559,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppChatRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/calls': {
+      id: '/_app/calls'
+      path: '/calls'
+      fullPath: '/calls'
+      preLoaderRoute: typeof AppCallsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/bulk-email': {
       id: '/_app/bulk-email'
       path: '/bulk-email'
@@ -549,13 +594,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAccountRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/projects/': {
-      id: '/_app/projects/'
-      path: '/projects'
-      fullPath: '/projects/'
-      preLoaderRoute: typeof AppProjectsIndexRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/deals/': {
       id: '/_app/deals/'
       path: '/deals'
@@ -565,10 +603,10 @@ declare module '@tanstack/react-router' {
     }
     '/_app/projects/$id': {
       id: '/_app/projects/$id'
-      path: '/projects/$id'
+      path: '/$id'
       fullPath: '/projects/$id'
       preLoaderRoute: typeof AppProjectsIdRouteImport
-      parentRoute: typeof AppRoute
+      parentRoute: typeof AppProjectsRoute
     }
     '/_app/deals/$id': {
       id: '/_app/deals/$id'
@@ -587,19 +625,34 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppProjectsRouteChildren {
+  AppProjectsIdRoute: typeof AppProjectsIdRoute
+}
+
+const AppProjectsRouteChildren: AppProjectsRouteChildren = {
+  AppProjectsIdRoute: AppProjectsIdRoute,
+}
+
+const AppProjectsRouteWithChildren = AppProjectsRoute._addFileChildren(
+  AppProjectsRouteChildren,
+)
+
 interface AppRouteChildren {
   AppAccountRoute: typeof AppAccountRoute
   AppAnalyticsRoute: typeof AppAnalyticsRoute
   AppAttendanceRoute: typeof AppAttendanceRoute
   AppBulkEmailRoute: typeof AppBulkEmailRoute
+  AppCallsRoute: typeof AppCallsRoute
   AppChatRoute: typeof AppChatRoute
   AppCrmRoute: typeof AppCrmRoute
   AppDevRoute: typeof AppDevRoute
   AppHowToUseRoute: typeof AppHowToUseRoute
   AppHrRoute: typeof AppHrRoute
+  AppInboxRoute: typeof AppInboxRoute
   AppKnowledgeRoute: typeof AppKnowledgeRoute
   AppLoginPhotosRoute: typeof AppLoginPhotosRoute
   AppOutreachRoute: typeof AppOutreachRoute
+  AppProjectsRoute: typeof AppProjectsRouteWithChildren
   AppRecruitmentRoute: typeof AppRecruitmentRoute
   AppSalesRoute: typeof AppSalesRoute
   AppScreenMonitoringRoute: typeof AppScreenMonitoringRoute
@@ -608,9 +661,7 @@ interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppAdminSettingsRoute: typeof AppAdminSettingsRoute
   AppDealsIdRoute: typeof AppDealsIdRoute
-  AppProjectsIdRoute: typeof AppProjectsIdRoute
   AppDealsIndexRoute: typeof AppDealsIndexRoute
-  AppProjectsIndexRoute: typeof AppProjectsIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -618,14 +669,17 @@ const AppRouteChildren: AppRouteChildren = {
   AppAnalyticsRoute: AppAnalyticsRoute,
   AppAttendanceRoute: AppAttendanceRoute,
   AppBulkEmailRoute: AppBulkEmailRoute,
+  AppCallsRoute: AppCallsRoute,
   AppChatRoute: AppChatRoute,
   AppCrmRoute: AppCrmRoute,
   AppDevRoute: AppDevRoute,
   AppHowToUseRoute: AppHowToUseRoute,
   AppHrRoute: AppHrRoute,
+  AppInboxRoute: AppInboxRoute,
   AppKnowledgeRoute: AppKnowledgeRoute,
   AppLoginPhotosRoute: AppLoginPhotosRoute,
   AppOutreachRoute: AppOutreachRoute,
+  AppProjectsRoute: AppProjectsRouteWithChildren,
   AppRecruitmentRoute: AppRecruitmentRoute,
   AppSalesRoute: AppSalesRoute,
   AppScreenMonitoringRoute: AppScreenMonitoringRoute,
@@ -634,9 +688,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppAdminSettingsRoute: AppAdminSettingsRoute,
   AppDealsIdRoute: AppDealsIdRoute,
-  AppProjectsIdRoute: AppProjectsIdRoute,
   AppDealsIndexRoute: AppDealsIndexRoute,
-  AppProjectsIndexRoute: AppProjectsIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

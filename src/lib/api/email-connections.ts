@@ -13,8 +13,30 @@ export interface ConnectEmailInput {
   fromEmail: string;
 }
 
+export interface OAuthProviderAvailability {
+  google: boolean;
+  microsoft: boolean;
+}
+
 export function getEmailConnectionStatus() {
   return apiFetch<EmailConnectionStatus>("/email-connections/me");
+}
+
+// Whether GOOGLE_CLIENT_ID/SECRET etc. are actually configured server-side --
+// checked so "Connect with Google/Outlook" can show as disabled with an
+// explanation instead of round-tripping to a 503.
+export function getOAuthProviderAvailability() {
+  return apiFetch<OAuthProviderAvailability>("/email-oauth/providers");
+}
+
+// Both return the consent-screen URL to navigate the browser to (a plain
+// top-level redirect, not something the frontend can complete via fetch).
+export function getGoogleAuthorizeUrl() {
+  return apiFetch<{ url: string }>("/email-oauth/google/authorize");
+}
+
+export function getMicrosoftAuthorizeUrl() {
+  return apiFetch<{ url: string }>("/email-oauth/microsoft/authorize");
 }
 
 export function connectEmail(input: ConnectEmailInput) {

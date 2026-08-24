@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { BugPriority, BugSeverity, BugStatus, RoleName } from "@prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
 import { CreateBugDto } from "./dto/create-bug.dto";
@@ -220,7 +225,11 @@ export class BugsService {
 
   async remove(id: string, user: RequestUser) {
     const bug = await this.findOne(id);
-    if (user.role.name !== RoleName.ADMIN && user.role.name !== RoleName.MANAGER && bug.reporterId !== user.id) {
+    if (
+      user.role.name !== RoleName.ADMIN &&
+      user.role.name !== RoleName.MANAGER &&
+      bug.reporterId !== user.id
+    ) {
       throw new ForbiddenException("Only the reporter, manager, or admin can delete a bug.");
     }
     await this.prisma.bug.delete({ where: { id } });

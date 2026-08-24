@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { DealApprovalStatus, DealStage, RoleName, ActivityType } from "@prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
 import { CreateDealDto } from "./dto/create-deal.dto";
@@ -11,7 +16,7 @@ import type { RequestUser } from "../../common/types/request-user.type";
 
 const dealInclude = {
   company: { select: { id: true, name: true } },
-  contact: { select: { id: true, firstName: true, lastName: true } },
+  contact: { select: { id: true, firstName: true, lastName: true, phone: true } },
   owner: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
 } as const;
 
@@ -35,6 +40,21 @@ export class DealsService {
       },
       include: dealInclude,
       orderBy: [{ stage: "asc" }, { position: "asc" }],
+    });
+  }
+
+  // Deals with a due-or-overdue rep-set follow-up date, still open. Same
+  // shape as the Bulk-Email/Sequences findFollowUps() methods, but backed by
+  // an explicit field instead of a derived "unopened after N days" rule.
+  findFollowUps(user: RequestUser) {
+    return this.prisma.deal.findMany({
+      where: {
+        followUpAt: { lte: new Date() },
+        stage: { notIn: [DealStage.WON, DealStage.LOST, DealStage.ARCHIVED] },
+        ...this.visibilityScope(user),
+      },
+      include: dealInclude,
+      orderBy: { followUpAt: "asc" },
     });
   }
 
@@ -152,10 +172,23 @@ export class DealsService {
         ownerId: dto.ownerId,
         notes: dto.notes,
         expectedCloseDate:
-          dto.expectedCloseDate === undefined ? undefined : dto.expectedCloseDate ? new Date(dto.expectedCloseDate) : null,
+          dto.expectedCloseDate === undefined
+            ? undefined
+            : dto.expectedCloseDate
+              ? new Date(dto.expectedCloseDate)
+              : null,
         closedAt: this.resolveClosedAt(stage),
         departmentId: dto.departmentId,
         approvalStatus,
+        followUpAt:
+          dto.followUpAt === undefined
+            ? undefined
+            : dto.followUpAt
+              ? new Date(dto.followUpAt)
+              : null,
+        // Any change to followUpAt (new date, or cleared) means the previous
+        // notification is stale -- let DealFollowUpsService re-evaluate it.
+        followUpNotifiedAt: dto.followUpAt === undefined ? undefined : null,
       },
       include: dealInclude,
     });
@@ -220,7 +253,11 @@ export class DealsService {
 
     const updated = await this.prisma.deal.update({
       where: { id },
-      data: { stage: DealStage.WON, approvalStatus: DealApprovalStatus.APPROVED, closedAt: new Date() },
+      data: {
+        stage: DealStage.WON,
+        approvalStatus: DealApprovalStatus.APPROVED,
+        closedAt: new Date(),
+      },
       include: dealInclude,
     });
 
@@ -309,7 +346,10 @@ export class DealsService {
   // TODO: revisit ACL model -- creator-defaulted owner, ADMIN, or a
   // same-department MANAGER only, for now. See TasksService.assertCanMutate
   // for the full rationale (phase 6).
-  private assertCanMutate(deal: { ownerId: string; departmentId: string | null }, user: RequestUser) {
+  private assertCanMutate(
+    deal: { ownerId: string; departmentId: string | null },
+    user: RequestUser,
+  ) {
     const isAdmin = user.role.name === RoleName.ADMIN;
     const isOwner = deal.ownerId === user.id;
     const isDeptManager =
@@ -321,7 +361,10 @@ export class DealsService {
   }
 
   // Narrower than assertCanMutate above -- no owner branch (see approve/reject).
-  private assertCanApprove(deal: { departmentId: string | null; approvalStatus: DealApprovalStatus }, user: RequestUser) {
+  private assertCanApprove(
+    deal: { departmentId: string | null; approvalStatus: DealApprovalStatus },
+    user: RequestUser,
+  ) {
     if (deal.approvalStatus !== DealApprovalStatus.PENDING) {
       throw new BadRequestException("This deal has no pending approval request");
     }

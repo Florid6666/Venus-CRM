@@ -1,4 +1,13 @@
-import { IsEnum, IsISO8601, IsInt, IsOptional, IsString, IsUUID, Min, MinLength } from "class-validator";
+import {
+  IsEnum,
+  IsISO8601,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Min,
+  MinLength,
+} from "class-validator";
 import { DealStage } from "@prisma/client";
 
 export class UpdateDealDto {
@@ -39,6 +48,10 @@ export class UpdateDealDto {
   @IsOptional()
   @IsISO8601()
   expectedCloseDate?: string | null;
+
+  @IsOptional()
+  @IsISO8601()
+  followUpAt?: string | null;
 
   @IsOptional()
   @IsUUID()

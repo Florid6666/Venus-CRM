@@ -5,6 +5,7 @@ import { BulkSendStatus, Prisma } from "@prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
 import { EmailSuppressionService } from "../email-suppression/email-suppression.service";
 import { EmailConnectionsService } from "../email-connections/email-connections.service";
+import { EmailOAuthService } from "../email-oauth/email-oauth.service";
 import { renderMergeFields } from "../../common/utils/merge-fields";
 import { composeEmailHtml } from "../../common/utils/email-body";
 import { buildUnsubscribeUrl } from "../../common/utils/unsubscribe-token";
@@ -45,6 +46,7 @@ export class BulkEmailEngineService {
     private readonly prisma: PrismaService,
     private readonly suppression: EmailSuppressionService,
     private readonly emailConnections: EmailConnectionsService,
+    private readonly emailOAuth: EmailOAuthService,
     private readonly config: ConfigService,
   ) {}
 
@@ -120,7 +122,9 @@ export class BulkEmailEngineService {
       appendSignature ? recipient.campaign.creator.emailSignatureHtml : null,
     );
     const appUrl =
-      this.config.get<string>("APP_URL") ?? this.config.get<string>("CORS_ORIGIN") ?? "http://localhost:8080";
+      this.config.get<string>("APP_URL") ??
+      this.config.get<string>("CORS_ORIGIN") ??
+      "http://localhost:8080";
     const unsubscribeUrl = buildUnsubscribeUrl(recipient.email, appUrl);
     const trackingUrl = `${appUrl.replace(/\/$/, "")}/api/tracking/open/bulk/${recipient.id}`;
     const html = appendTrackingFooter(body, { unsubscribeUrl, trackingUrl });
@@ -134,9 +138,26 @@ export class BulkEmailEngineService {
     try {
       const sendable = await this.emailConnections.requireSendable(recipient.campaign.creatorId);
       if (sendable.mode === "smtp") {
-        await sendable.transporter.sendMail({ from: sendable.from, to: recipient.email, subject, html });
+        await sendable.transporter.sendMail({
+          from: sendable.from,
+          to: recipient.email,
+          subject,
+          html,
+        });
+      } else if (sendable.mode === "oauth") {
+        await this.emailOAuth.sendMail(sendable.provider, sendable.accessToken, {
+          to: recipient.email,
+          subject,
+          html,
+          from: sendable.from,
+        });
       } else {
-        const result = await sendEmail({ to: recipient.email, subject, html, replyTo: sendable.replyTo });
+        const result = await sendEmail({
+          to: recipient.email,
+          subject,
+          html,
+          replyTo: sendable.replyTo,
+        });
         if (!result.delivered) {
           throw new Error(`Stopgap HTTP sender failed (${result.provider})`);
         }

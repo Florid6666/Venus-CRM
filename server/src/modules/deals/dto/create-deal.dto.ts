@@ -1,4 +1,13 @@
-import { IsEnum, IsISO8601, IsInt, IsOptional, IsString, IsUUID, Min, MinLength } from "class-validator";
+import {
+  IsEnum,
+  IsISO8601,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  Min,
+  MinLength,
+} from "class-validator";
 import { DealStage } from "@prisma/client";
 
 export class CreateDealDto {

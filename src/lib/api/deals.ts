@@ -19,7 +19,10 @@ export interface CreateDealInput {
   expectedCloseDate?: string | null;
 }
 
-export type UpdateDealInput = Partial<CreateDealInput> & { position?: number };
+export type UpdateDealInput = Partial<CreateDealInput> & {
+  position?: number;
+  followUpAt?: string | null;
+};
 
 function buildQuery(filters: DealFilters): string {
   const params = new URLSearchParams();
@@ -37,6 +40,10 @@ export function listDeals(filters: DealFilters = {}) {
 
 export function getDeal(id: string) {
   return apiFetch<Deal>(`/deals/${id}`);
+}
+
+export function listDealFollowUps() {
+  return apiFetch<Deal[]>("/deals/follow-ups");
 }
 
 export function createDeal(input: CreateDealInput) {

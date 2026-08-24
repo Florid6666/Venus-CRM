@@ -22,15 +22,15 @@ import {
   MessageSquare,
   Folder,
 } from "lucide-react";
-import { Calendar as BigCalendar, dateFnsLocalizer } from 'react-big-calendar';
-import { format } from 'date-fns/format';
-import { parse } from 'date-fns/parse';
-import { startOfWeek } from 'date-fns/startOfWeek';
-import { getDay } from 'date-fns/getDay';
-import { enUS } from 'date-fns/locale/en-US';
-import 'react-big-calendar/lib/css/react-big-calendar.css';
+import { Calendar as BigCalendar, dateFnsLocalizer } from "react-big-calendar";
+import { format } from "date-fns/format";
+import { parse } from "date-fns/parse";
+import { startOfWeek } from "date-fns/startOfWeek";
+import { getDay } from "date-fns/getDay";
+import { enUS } from "date-fns/locale/en-US";
+import "react-big-calendar/lib/css/react-big-calendar.css";
 
-const locales = { 'en-US': enUS };
+const locales = { "en-US": enUS };
 const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
 
 import { useAuthStore } from "@/stores/auth-store";
@@ -75,6 +75,8 @@ import {
   TASK_STATUS_LABELS,
   TASK_TYPES,
   TASK_TYPE_LABELS,
+  type GitCommit,
+  type SprintTaskUpdate,
   type Task,
   type TaskStatus,
   type TaskType,
@@ -100,8 +102,10 @@ function DevPage() {
   );
 
   const [githubDialogOpen, setGithubDialogOpen] = useState(false);
-  const [githubUsernameInput, setGithubUsernameInput] = useState(currentUserFull?.githubUsername || "");
-  
+  const [githubUsernameInput, setGithubUsernameInput] = useState(
+    currentUserFull?.githubUsername || "",
+  );
+
   // Project Scope Filter
   const [selectedProjectId, setSelectedProjectId] = useState<string>("ALL_PROJECTS");
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
@@ -112,7 +116,7 @@ function DevPage() {
   });
 
   const { data: sprints, isLoading: sprintsLoading } = useSprints(
-    selectedProjectId === "ALL_PROJECTS" ? undefined : selectedProjectId
+    selectedProjectId === "ALL_PROJECTS" ? undefined : selectedProjectId,
   );
   const { data: commits, isLoading: commitsLoading } = useCommits();
   const { data: analytics } = useAnalyticsSummary();
@@ -126,7 +130,7 @@ function DevPage() {
     if (!tasks) return [];
     if (selectedProjectId === "ALL_PROJECTS") return tasks;
     return tasks.filter(
-      (t) => t.projectId === selectedProjectId || t.project?.id === selectedProjectId
+      (t) => t.projectId === selectedProjectId || t.project?.id === selectedProjectId,
     );
   }, [tasks, selectedProjectId]);
 
@@ -142,7 +146,9 @@ function DevPage() {
   const declinePR = useDeclinePR();
 
   // Active Tab
-  const [activeTab, setActiveTab] = useState<"board" | "backlog" | "projects" | "calendar">("board");
+  const [activeTab, setActiveTab] = useState<"board" | "backlog" | "projects" | "calendar">(
+    "board",
+  );
 
   // Create Sprint Dialog State
   const [createSprintOpen, setCreateSprintOpen] = useState(false);
@@ -179,8 +185,9 @@ function DevPage() {
   }, [sprints]);
 
   // Real per-task progress updates across the active sprint
-  const { data: sprintTaskUpdates, isLoading: sprintUpdatesLoading } =
-    useSprintTaskUpdates(activeSprint?.id);
+  const { data: sprintTaskUpdates, isLoading: sprintUpdatesLoading } = useSprintTaskUpdates(
+    activeSprint?.id,
+  );
 
   // Task detail dialog (opened from a sprint board card)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -191,7 +198,7 @@ function DevPage() {
     if (!activeSprint) return { totalTasks: 0, completedTasks: 0, totalSP: 0, completedSP: 0 };
     const sprintTasks = filteredTasks.filter((t) => t.sprintId === activeSprint.id);
     const completed = sprintTasks.filter((t) => t.status === "DONE");
-    
+
     const totalSP = sprintTasks.reduce((acc, t) => acc + (t.storyPoints ?? 0), 0);
     const completedSP = completed.reduce((acc, t) => acc + (t.storyPoints ?? 0), 0);
 
@@ -221,33 +228,39 @@ function DevPage() {
 
   // Group activities by date for Daily Updates
   const dailyUpdates = useMemo(() => {
-    const items: Array<{ id: string, type: 'commit' | 'task' | 'update', date: string, data: any }> = [];
+    const items: Array<
+      | { id: string; type: "commit"; date: string; data: GitCommit }
+      | { id: string; type: "task"; date: string; data: Task }
+      | { id: string; type: "update"; date: string; data: SprintTaskUpdate }
+    > = [];
 
-    commits?.forEach(c => {
-      items.push({ id: `commit-${c.id}`, type: 'commit', date: c.createdAt, data: c });
+    commits?.forEach((c) => {
+      items.push({ id: `commit-${c.id}`, type: "commit", date: c.createdAt, data: c });
     });
 
-    tasks?.filter(t => t.status === 'DONE').forEach(t => {
-      items.push({ id: `task-${t.id}`, type: 'task', date: t.updatedAt, data: t });
-    });
+    tasks
+      ?.filter((t) => t.status === "DONE")
+      .forEach((t) => {
+        items.push({ id: `task-${t.id}`, type: "task", date: t.updatedAt, data: t });
+      });
 
-    sprintTaskUpdates?.forEach(u => {
-      items.push({ id: `update-${u.id}`, type: 'update', date: u.createdAt, data: u });
+    sprintTaskUpdates?.forEach((u) => {
+      items.push({ id: `update-${u.id}`, type: "update", date: u.createdAt, data: u });
     });
 
     items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    
-    const groups: Array<{ date: string, items: typeof items }> = [];
-    items.forEach(item => {
+
+    const groups: Array<{ date: string; items: typeof items }> = [];
+    items.forEach((item) => {
       const dateKey = formatRelativeDay(item.date);
-      let group = groups.find(g => g.date === dateKey);
+      let group = groups.find((g) => g.date === dateKey);
       if (!group) {
         group = { date: dateKey, items: [] };
         groups.push(group);
       }
       group.items.push(item);
     });
-    
+
     return groups;
   }, [commits, tasks, sprintTaskUpdates]);
 
@@ -314,7 +327,7 @@ function DevPage() {
         description: projectDesc || undefined,
         dueDate: projectDue ? new Date(projectDue).toISOString() : undefined,
         departmentId: currentUser?.department?.id ?? undefined,
-        status: "ACTIVE"
+        status: "ACTIVE",
       });
       setCreateProjectOpen(false);
       setProjectName("");
@@ -384,13 +397,19 @@ function DevPage() {
     const completedSPPerDay = new Array(totalDays + 1).fill(0);
     completedTasks.forEach((t) => {
       const closedTime = t.updatedAt ? new Date(t.updatedAt).getTime() : Date.now();
-      const dayIndex = Math.min(totalDays, Math.max(0, Math.floor((closedTime - start) / (24 * 3600 * 1000))));
-      completedSPPerDay[dayIndex] += (t.storyPoints ?? 0);
+      const dayIndex = Math.min(
+        totalDays,
+        Math.max(0, Math.floor((closedTime - start) / (24 * 3600 * 1000))),
+      );
+      completedSPPerDay[dayIndex] += t.storyPoints ?? 0;
     });
 
     const actualPoints: { day: number; val: number }[] = [];
     let remainingSP = totalSP;
-    const todayIndex = Math.min(totalDays, Math.max(0, Math.floor((Date.now() - start) / (24 * 3600 * 1000))));
+    const todayIndex = Math.min(
+      totalDays,
+      Math.max(0, Math.floor((Date.now() - start) / (24 * 3600 * 1000))),
+    );
 
     for (let i = 0; i <= totalDays; i++) {
       if (i <= todayIndex) {
@@ -436,10 +455,7 @@ function DevPage() {
   if (selectedTaskId) {
     return (
       <div className="p-6 max-w-7xl mx-auto space-y-4">
-        <ZohoTaskPagePanel
-          taskId={selectedTaskId}
-          onClose={() => setSelectedTaskId(null)}
-        />
+        <ZohoTaskPagePanel taskId={selectedTaskId} onClose={() => setSelectedTaskId(null)} />
       </div>
     );
   }
@@ -475,13 +491,29 @@ function DevPage() {
           </div>
 
           {currentUser && !currentUserFull?.githubUsername && (
-            <Button onClick={() => { setGithubUsernameInput(""); setGithubDialogOpen(true); }} variant="outline" size="sm" className="gap-1.5 text-xs text-warning border-warning/30 hover:bg-warning/10">
+            <Button
+              onClick={() => {
+                setGithubUsernameInput("");
+                setGithubDialogOpen(true);
+              }}
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-xs text-warning border-warning/30 hover:bg-warning/10"
+            >
               <AlertCircle className="size-3.5" />
               Set GitHub Username
             </Button>
           )}
           {currentUser && currentUserFull?.githubUsername && (
-            <Button onClick={() => { setGithubUsernameInput(currentUserFull.githubUsername || ""); setGithubDialogOpen(true); }} variant="ghost" size="sm" className="gap-1.5 text-xs text-text-dim">
+            <Button
+              onClick={() => {
+                setGithubUsernameInput(currentUserFull.githubUsername || "");
+                setGithubDialogOpen(true);
+              }}
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-xs text-text-dim"
+            >
               <Settings className="size-3.5" />
               GitHub: {currentUserFull.githubUsername}
             </Button>
@@ -508,27 +540,43 @@ function DevPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {openPRs.map((pr) => (
-                  <div key={pr.id} className="bg-panel border border-border rounded-lg p-3 flex flex-col justify-between gap-3 shadow-sm">
+                  <div
+                    key={pr.id}
+                    className="bg-panel border border-border rounded-lg p-3 flex flex-col justify-between gap-3 shadow-sm"
+                  >
                     <div>
                       <div className="flex items-center justify-between text-[9px] text-text-dim">
                         <div className="flex items-center gap-1.5">
                           <span className="font-semibold text-primary">PR #{pr.prNumber}</span>
-                          {pr.buildStatus === "SUCCESS" && <CheckCircle2 className="size-3 text-green-500" />}
-                          {pr.buildStatus === "FAILURE" && <AlertCircle className="size-3 text-red-500" />}
-                          {pr.buildStatus === "PENDING" && <Loader2 className="size-3 text-amber-500 animate-spin" />}
+                          {pr.buildStatus === "SUCCESS" && (
+                            <CheckCircle2 className="size-3 text-green-500" />
+                          )}
+                          {pr.buildStatus === "FAILURE" && (
+                            <AlertCircle className="size-3 text-red-500" />
+                          )}
+                          {pr.buildStatus === "PENDING" && (
+                            <Loader2 className="size-3 text-amber-500 animate-spin" />
+                          )}
                         </div>
-                        <span>by {pr.author.firstName} {pr.author.lastName}</span>
+                        <span>
+                          by {pr.author.firstName} {pr.author.lastName}
+                        </span>
                       </div>
                       <h3 className="text-xs font-semibold leading-snug mt-1 truncate">
                         {pr.message}
                       </h3>
                       <div className="flex items-center gap-1 mt-1.5 text-[9px] text-text-dim font-mono">
                         <GitFork className="size-2.5 text-cyan-500" />
-                        <span>branch: <span className="text-cyan-500 font-semibold">{pr.branch}</span></span>
+                        <span>
+                          branch: <span className="text-cyan-500 font-semibold">{pr.branch}</span>
+                        </span>
                       </div>
                       {pr.task && (
                         <p className="text-[10px] text-text-dim mt-1.5 bg-canvas/30 px-1.5 py-0.5 rounded truncate">
-                          Linked Task: <span className="font-semibold text-primary mr-1">DEV-{pr.task.taskNumber}</span>
+                          Linked Task:{" "}
+                          <span className="font-semibold text-primary mr-1">
+                            DEV-{pr.task.taskNumber}
+                          </span>
                           <span className="font-semibold text-text">{pr.task.title}</span>
                         </p>
                       )}
@@ -563,7 +611,11 @@ function DevPage() {
                         }}
                         disabled={declinePR.isPending || mergePR.isPending}
                       >
-                        {mergePR.isPending ? <Loader2 className="size-3 animate-spin" /> : "Merge & Close"}
+                        {mergePR.isPending ? (
+                          <Loader2 className="size-3 animate-spin" />
+                        ) : (
+                          "Merge & Close"
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -592,11 +644,20 @@ function DevPage() {
                   </div>
 
                   {activeSprint ? (
-                    <Button onClick={handleCompleteSprint} variant="ghost" size="sm" className="text-xs text-destructive hover:text-destructive">
+                    <Button
+                      onClick={handleCompleteSprint}
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs text-destructive hover:text-destructive"
+                    >
                       Complete Sprint
                     </Button>
                   ) : (
-                    <Button onClick={() => setCreateSprintOpen(true)} size="sm" className="text-xs gap-1.5">
+                    <Button
+                      onClick={() => setCreateSprintOpen(true)}
+                      size="sm"
+                      className="text-xs gap-1.5"
+                    >
                       <Play className="size-3.5" />
                       Start Sprint
                     </Button>
@@ -606,13 +667,17 @@ function DevPage() {
                 {activeSprint && (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-2 border-t border-border-subtle items-center">
                     <div className="space-y-1">
-                      <span className="text-[10px] text-text-dim block uppercase">Story Points</span>
+                      <span className="text-[10px] text-text-dim block uppercase">
+                        Story Points
+                      </span>
                       <span className="text-lg font-bold">
                         {sprintStats.completedSP} / {sprintStats.totalSP} SP
                       </span>
                     </div>
                     <div className="space-y-1">
-                      <span className="text-[10px] text-text-dim block uppercase">Tasks Status</span>
+                      <span className="text-[10px] text-text-dim block uppercase">
+                        Tasks Status
+                      </span>
                       <span className="text-lg font-bold">
                         {sprintStats.completedTasks} / {sprintStats.totalTasks} Done
                       </span>
@@ -621,7 +686,10 @@ function DevPage() {
                       <div className="flex items-center justify-between text-[10px] text-text-dim">
                         <span>Progress</span>
                         <span>
-                          {sprintStats.totalSP > 0 ? Math.round((sprintStats.completedSP / sprintStats.totalSP) * 100) : 0}%
+                          {sprintStats.totalSP > 0
+                            ? Math.round((sprintStats.completedSP / sprintStats.totalSP) * 100)
+                            : 0}
+                          %
                         </span>
                       </div>
                       <div className="w-full h-1.5 bg-canvas rounded-full overflow-hidden border border-border-subtle">
@@ -640,37 +708,52 @@ function DevPage() {
               <div className="md:col-span-1 flex justify-center border-t md:border-t-0 md:border-l border-border-subtle pt-4 md:pt-0 md:pl-6">
                 {burndownData ? (
                   <div className="flex flex-col items-center justify-center p-2 bg-canvas/20 rounded-lg border border-border-subtle w-full max-w-[200px]">
-                    <span className="text-[9px] font-bold text-text-dim mb-1.5 uppercase select-none">Sprint Burndown</span>
-                    <svg width="150" height="75" className="overflow-visible font-mono text-[7px] text-text-dim">
+                    <span className="text-[9px] font-bold text-text-dim mb-1.5 uppercase select-none">
+                      Sprint Burndown
+                    </span>
+                    <svg
+                      width="150"
+                      height="75"
+                      className="overflow-visible font-mono text-[7px] text-text-dim"
+                    >
                       {/* Gridlines */}
-                      <line x1="10" y1="5" x2="140" y2="5" stroke="var(--border-subtle)" strokeDasharray="2" />
+                      <line
+                        x1="10"
+                        y1="5"
+                        x2="140"
+                        y2="5"
+                        stroke="var(--border-subtle)"
+                        strokeDasharray="2"
+                      />
                       <line x1="10" y1="65" x2="140" y2="65" stroke="var(--border-subtle)" />
-                      
+
                       {/* Ideal Path */}
                       <path
-                        d={`M ${burndownData.ideal.map(p => `${10 + (p.day * 130 / burndownData.totalDays)},${burndownData.totalSP > 0 ? 65 - (p.val * 60 / burndownData.totalSP) : 65}`).join(" L ")}`}
+                        d={`M ${burndownData.ideal.map((p) => `${10 + (p.day * 130) / burndownData.totalDays},${burndownData.totalSP > 0 ? 65 - (p.val * 60) / burndownData.totalSP : 65}`).join(" L ")}`}
                         fill="none"
                         stroke="var(--text-dim)"
                         strokeWidth="1.5"
                         strokeDasharray="3"
                       />
-                      
+
                       {/* Actual Path */}
                       {burndownData.actual.length > 0 && (
                         <path
-                          d={`M ${burndownData.actual.map(p => `${10 + (p.day * 130 / burndownData.totalDays)},${burndownData.totalSP > 0 ? 65 - (p.val * 60 / burndownData.totalSP) : 65}`).join(" L ")}`}
+                          d={`M ${burndownData.actual.map((p) => `${10 + (p.day * 130) / burndownData.totalDays},${burndownData.totalSP > 0 ? 65 - (p.val * 60) / burndownData.totalSP : 65}`).join(" L ")}`}
                           fill="none"
                           stroke="var(--primary)"
                           strokeWidth="2"
                         />
                       )}
-                      
+
                       {/* Interactive Dots */}
                       {burndownData.actual.map((p, index) => (
                         <circle
                           key={index}
-                          cx={10 + (p.day * 130 / burndownData.totalDays)}
-                          cy={burndownData.totalSP > 0 ? 65 - (p.val * 60 / burndownData.totalSP) : 65}
+                          cx={10 + (p.day * 130) / burndownData.totalDays}
+                          cy={
+                            burndownData.totalSP > 0 ? 65 - (p.val * 60) / burndownData.totalSP : 65
+                          }
                           r="2.5"
                           className="fill-primary stroke-background"
                           strokeWidth="1"
@@ -696,7 +779,9 @@ function DevPage() {
             <button
               onClick={() => setActiveTab("board")}
               className={`pb-2 border-b-2 px-1 transition-all ${
-                activeTab === "board" ? "border-primary text-text font-bold" : "border-transparent text-text-dim hover:text-text"
+                activeTab === "board"
+                  ? "border-primary text-text font-bold"
+                  : "border-transparent text-text-dim hover:text-text"
               }`}
             >
               Sprint Board
@@ -704,7 +789,9 @@ function DevPage() {
             <button
               onClick={() => setActiveTab("backlog")}
               className={`pb-2 border-b-2 px-1 transition-all flex items-center gap-1.5 ${
-                activeTab === "backlog" ? "border-primary text-text font-bold" : "border-transparent text-text-dim hover:text-text"
+                activeTab === "backlog"
+                  ? "border-primary text-text font-bold"
+                  : "border-transparent text-text-dim hover:text-text"
               }`}
             >
               Backlog Planning
@@ -715,7 +802,9 @@ function DevPage() {
             <button
               onClick={() => setActiveTab("projects")}
               className={`pb-2 border-b-2 px-1 transition-all ${
-                activeTab === "projects" ? "border-primary text-text font-bold" : "border-transparent text-text-dim hover:text-text"
+                activeTab === "projects"
+                  ? "border-primary text-text font-bold"
+                  : "border-transparent text-text-dim hover:text-text"
               }`}
             >
               Projects
@@ -723,7 +812,9 @@ function DevPage() {
             <button
               onClick={() => setActiveTab("calendar")}
               className={`pb-2 border-b-2 px-1 transition-all ${
-                activeTab === "calendar" ? "border-primary text-text font-bold" : "border-transparent text-text-dim hover:text-text"
+                activeTab === "calendar"
+                  ? "border-primary text-text font-bold"
+                  : "border-transparent text-text-dim hover:text-text"
               }`}
             >
               Calendar
@@ -736,7 +827,10 @@ function DevPage() {
               {TASK_STATUSES.map((status) => {
                 const columnTasks = sprintTasks.filter((t) => t.status === status && !t.parentId);
                 return (
-                  <div key={status} className="flex flex-col bg-canvas border border-border-subtle rounded-xl p-3 space-y-3 min-h-[300px]">
+                  <div
+                    key={status}
+                    className="flex flex-col bg-canvas border border-border-subtle rounded-xl p-3 space-y-3 min-h-[300px]"
+                  >
                     <div className="flex items-center justify-between border-b border-border-subtle pb-2 select-none">
                       <span className="text-xs font-bold tracking-wide uppercase">
                         {TASK_STATUS_LABELS[status]}
@@ -759,14 +853,18 @@ function DevPage() {
                             <div className="flex items-start justify-between gap-1.5">
                               {getTaskTypeIcon(task.type)}
                               <span className="text-xs font-semibold leading-snug break-words flex-1">
-                                <span className="text-primary font-bold mr-1">DEV-{task.taskNumber}</span>
+                                <span className="text-primary font-bold mr-1">
+                                  DEV-{task.taskNumber}
+                                </span>
                                 {task.title}
                               </span>
                             </div>
 
                             <div className="flex items-center justify-between text-[10px]">
                               <div className="flex items-center gap-1.5">
-                                <span className={`px-1.5 py-0.5 border rounded-md text-[8px] font-bold font-mono ${getTaskTypeBadge(task.type)}`}>
+                                <span
+                                  className={`px-1.5 py-0.5 border rounded-md text-[8px] font-bold font-mono ${getTaskTypeBadge(task.type)}`}
+                                >
                                   {TASK_TYPE_LABELS[task.type]}
                                 </span>
                                 <span className="font-bold text-text-dim">
@@ -776,14 +874,22 @@ function DevPage() {
 
                               <Avatar className="size-4 shrink-0 bg-primary/10 border border-primary/20">
                                 <AvatarFallback className="text-[7px]">
-                                  {task.assignee ? `${task.assignee.firstName[0]}${task.assignee.lastName[0]}` : "?"}
+                                  {task.assignee
+                                    ? `${task.assignee.firstName[0]}${task.assignee.lastName[0]}`
+                                    : "?"}
                                 </AvatarFallback>
                               </Avatar>
                             </div>
 
                             {task.dueDate && (
-                              <div className={`text-[9px] font-bold flex items-center gap-1 ${new Date(task.dueDate) < new Date() ? 'text-red-400' : 'text-text-dim'}`}>
-                                🗓️ Due: {new Date(task.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                              <div
+                                className={`text-[9px] font-bold flex items-center gap-1 ${new Date(task.dueDate) < new Date() ? "text-red-400" : "text-text-dim"}`}
+                              >
+                                🗓️ Due:{" "}
+                                {new Date(task.dueDate).toLocaleDateString(undefined, {
+                                  month: "short",
+                                  day: "numeric",
+                                })}
                               </div>
                             )}
 
@@ -797,7 +903,8 @@ function DevPage() {
                                   update{task._count.updates !== 1 ? "s" : ""}
                                   {task.updates[0] && (
                                     <span className="text-text-dim">
-                                      {" "}· last: {task.updates[0].content.slice(0, 40)}
+                                      {" "}
+                                      · last: {task.updates[0].content.slice(0, 40)}
                                       {task.updates[0].content.length > 40 ? "…" : ""}
                                     </span>
                                   )}
@@ -809,11 +916,20 @@ function DevPage() {
 
                             {task.subtasks && task.subtasks.length > 0 && (
                               <div className="pt-2 mt-2 border-t border-border-subtle space-y-1.5">
-                                <div className="text-[8px] font-bold text-text-dim uppercase tracking-wider">Sub-tasks</div>
-                                {task.subtasks.map(sub => (
-                                  <div key={sub.id} className="flex items-center gap-1.5 text-[9px] bg-background/50 p-1.5 rounded border border-border-subtle">
-                                    <span className="text-primary font-bold">DEV-{sub.taskNumber}</span>
-                                    <span className={`truncate flex-1 ${sub.status === 'DONE' ? 'line-through text-text-dim' : 'text-text'}`}>
+                                <div className="text-[8px] font-bold text-text-dim uppercase tracking-wider">
+                                  Sub-tasks
+                                </div>
+                                {task.subtasks.map((sub) => (
+                                  <div
+                                    key={sub.id}
+                                    className="flex items-center gap-1.5 text-[9px] bg-background/50 p-1.5 rounded border border-border-subtle"
+                                  >
+                                    <span className="text-primary font-bold">
+                                      DEV-{sub.taskNumber}
+                                    </span>
+                                    <span
+                                      className={`truncate flex-1 ${sub.status === "DONE" ? "line-through text-text-dim" : "text-text"}`}
+                                    >
                                       {sub.title}
                                     </span>
                                   </div>
@@ -828,7 +944,9 @@ function DevPage() {
                             >
                               <Select
                                 value={task.status}
-                                onValueChange={(v) => handleMoveTaskStatus(task.id, v as TaskStatus)}
+                                onValueChange={(v) =>
+                                  handleMoveTaskStatus(task.id, v as TaskStatus)
+                                }
                               >
                                 <SelectTrigger className="h-6 text-[9px] w-24">
                                   <SelectValue />
@@ -885,109 +1003,137 @@ function DevPage() {
                   </div>
                 ) : (
                   <div className="divide-y divide-border-subtle">
-                    {backlogTasks.filter(t => !t.parentId).map((task) => {
-                      const isSelected = !!selectedBacklogTaskIds[task.id];
-                      return (
-                        <div key={task.id} className="p-3.5 flex items-center gap-3 hover:bg-canvas/30 transition-colors">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={(e) =>
-                              setSelectedBacklogTaskIds((prev) => ({
-                                ...prev,
-                                [task.id]: e.target.checked,
-                              }))
-                            }
-                            className="size-3.5 rounded border-border text-primary shrink-0"
-                          />
-                          
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              {getTaskTypeIcon(task.type)}
-                              <span className="text-xs font-semibold truncate text-text">
-                                <span className="text-primary font-bold mr-1.5">DEV-{task.taskNumber}</span>
-                                {task.title}
-                              </span>
+                    {backlogTasks
+                      .filter((t) => !t.parentId)
+                      .map((task) => {
+                        const isSelected = !!selectedBacklogTaskIds[task.id];
+                        return (
+                          <div
+                            key={task.id}
+                            className="p-3.5 flex items-center gap-3 hover:bg-canvas/30 transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={(e) =>
+                                setSelectedBacklogTaskIds((prev) => ({
+                                  ...prev,
+                                  [task.id]: e.target.checked,
+                                }))
+                              }
+                              className="size-3.5 rounded border-border text-primary shrink-0"
+                            />
+
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                {getTaskTypeIcon(task.type)}
+                                <span className="text-xs font-semibold truncate text-text">
+                                  <span className="text-primary font-bold mr-1.5">
+                                    DEV-{task.taskNumber}
+                                  </span>
+                                  {task.title}
+                                </span>
+                              </div>
+                              {task.description && (
+                                <p className="text-[10px] text-text-dim truncate mt-0.5 max-w-xl">
+                                  {task.description}
+                                </p>
+                              )}
+
+                              {task.subtasks && task.subtasks.length > 0 && (
+                                <div className="mt-2 space-y-1">
+                                  {task.subtasks.map((sub) => (
+                                    <div
+                                      key={sub.id}
+                                      className="flex items-center gap-1.5 text-[9px] bg-canvas/30 w-fit pr-3 pl-1.5 py-0.5 rounded border border-border-subtle"
+                                    >
+                                      <span className="text-primary font-bold">
+                                        DEV-{sub.taskNumber}
+                                      </span>
+                                      <span
+                                        className={`truncate ${sub.status === "DONE" ? "line-through text-text-dim" : "text-text"}`}
+                                      >
+                                        {sub.title}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
-                            {task.description && (
-                              <p className="text-[10px] text-text-dim truncate mt-0.5 max-w-xl">
-                                {task.description}
-                              </p>
-                            )}
 
-                            {task.subtasks && task.subtasks.length > 0 && (
-                              <div className="mt-2 space-y-1">
-                                {task.subtasks.map(sub => (
-                                  <div key={sub.id} className="flex items-center gap-1.5 text-[9px] bg-canvas/30 w-fit pr-3 pl-1.5 py-0.5 rounded border border-border-subtle">
-                                    <span className="text-primary font-bold">DEV-{sub.taskNumber}</span>
-                                    <span className={`truncate ${sub.status === 'DONE' ? 'line-through text-text-dim' : 'text-text'}`}>
-                                      {sub.title}
-                                    </span>
-                                  </div>
-                                ))}
+                            <div className="flex items-center gap-3 shrink-0 select-none">
+                              {task.dueDate && (
+                                <div
+                                  className={`text-[9px] font-bold ${new Date(task.dueDate) < new Date() ? "text-red-400" : "text-text-dim"}`}
+                                >
+                                  🗓️{" "}
+                                  {new Date(task.dueDate).toLocaleDateString(undefined, {
+                                    month: "short",
+                                    day: "numeric",
+                                  })}
+                                </div>
+                              )}
+                              <span
+                                className={`px-1.5 py-0.5 border rounded text-[8px] font-bold font-mono ${getTaskTypeBadge(task.type)}`}
+                              >
+                                {TASK_TYPE_LABELS[task.type]}
+                              </span>
+
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] font-bold">
+                                  {task.storyPoints ?? 0} SP
+                                </span>
+                                {/* Story Point Slider/Selector */}
+                                <Select
+                                  value={String(task.storyPoints ?? 1)}
+                                  onValueChange={(v) =>
+                                    updateTask.mutate({
+                                      id: task.id,
+                                      input: { storyPoints: parseInt(v, 10) },
+                                    })
+                                  }
+                                >
+                                  <SelectTrigger className="h-6 w-12 text-[9px] p-1">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {[1, 2, 3, 5, 8, 13].map((sp) => (
+                                      <SelectItem
+                                        key={sp}
+                                        value={String(sp)}
+                                        className="text-[9px]"
+                                      >
+                                        {sp}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                               </div>
-                            )}
-                          </div>
 
-                          <div className="flex items-center gap-3 shrink-0 select-none">
-                            {task.dueDate && (
-                              <div className={`text-[9px] font-bold ${new Date(task.dueDate) < new Date() ? 'text-red-400' : 'text-text-dim'}`}>
-                                🗓️ {new Date(task.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                              </div>
-                            )}
-                            <span className={`px-1.5 py-0.5 border rounded text-[8px] font-bold font-mono ${getTaskTypeBadge(task.type)}`}>
-                              {TASK_TYPE_LABELS[task.type]}
-                            </span>
-
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[10px] font-bold">{task.storyPoints ?? 0} SP</span>
-                              {/* Story Point Slider/Selector */}
                               <Select
-                                value={String(task.storyPoints ?? 1)}
+                                value={task.type}
                                 onValueChange={(v) =>
                                   updateTask.mutate({
                                     id: task.id,
-                                    input: { storyPoints: parseInt(v, 10) },
+                                    input: { type: v as TaskType },
                                   })
                                 }
                               >
-                                <SelectTrigger className="h-6 w-12 text-[9px] p-1">
+                                <SelectTrigger className="h-6 w-20 text-[9px] p-1">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {[1, 2, 3, 5, 8, 13].map((sp) => (
-                                    <SelectItem key={sp} value={String(sp)} className="text-[9px]">
-                                      {sp}
+                                  {TASK_TYPES.map((t) => (
+                                    <SelectItem key={t} value={t} className="text-[9px]">
+                                      {TASK_TYPE_LABELS[t]}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
                             </div>
-
-                            <Select
-                              value={task.type}
-                              onValueChange={(v) =>
-                                updateTask.mutate({
-                                  id: task.id,
-                                  input: { type: v as TaskType },
-                                })
-                              }
-                            >
-                              <SelectTrigger className="h-6 w-20 text-[9px] p-1">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {TASK_TYPES.map((t) => (
-                                  <SelectItem key={t} value={t} className="text-[9px]">
-                                    {TASK_TYPE_LABELS[t]}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
                   </div>
                 )}
               </div>
@@ -999,20 +1145,31 @@ function DevPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between border-b border-border-subtle pb-2">
                 <h3 className="text-sm font-bold">Projects</h3>
-                <Button size="sm" className="h-7 text-[10px]" onClick={() => setCreateProjectOpen(true)}>
+                <Button
+                  size="sm"
+                  className="h-7 text-[10px]"
+                  onClick={() => setCreateProjectOpen(true)}
+                >
                   <Plus className="size-3 mr-1" /> Create Project
                 </Button>
               </div>
               {projects?.length === 0 ? (
-                <p className="text-xs text-text-dim bg-panel border border-border p-8 text-center rounded-xl">No projects found for your department.</p>
+                <p className="text-xs text-text-dim bg-panel border border-border p-8 text-center rounded-xl">
+                  No projects found for your department.
+                </p>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {projects?.map(p => (
-                    <div key={p.id} className="bg-panel border border-border p-4 rounded-xl space-y-2">
+                  {projects?.map((p) => (
+                    <div
+                      key={p.id}
+                      className="bg-panel border border-border p-4 rounded-xl space-y-2"
+                    >
                       <h4 className="text-xs font-bold text-primary">{p.name}</h4>
                       <p className="text-[10px] text-text-dim min-h-[30px]">{p.description}</p>
                       <div className="flex items-center justify-between text-[10px] pt-2 border-t border-border-subtle">
-                        <span className="font-semibold px-1.5 py-0.5 rounded border border-border-subtle bg-canvas">{p.status}</span>
+                        <span className="font-semibold px-1.5 py-0.5 rounded border border-border-subtle bg-canvas">
+                          {p.status}
+                        </span>
                         {p.dueDate && <span>Due: {new Date(p.dueDate).toLocaleDateString()}</span>}
                       </div>
                     </div>
@@ -1025,19 +1182,25 @@ function DevPage() {
           {/* Calendar View */}
           {activeTab === "calendar" && (
             <div className="bg-panel border border-border p-4 rounded-xl h-[600px] overflow-hidden">
-              <h3 className="text-sm font-bold border-b border-border-subtle pb-2 mb-4">Calendar</h3>
+              <h3 className="text-sm font-bold border-b border-border-subtle pb-2 mb-4">
+                Calendar
+              </h3>
               <div className="h-[500px]">
                 <BigCalendar
                   localizer={localizer}
-                  events={tasks?.filter(t => t.dueDate).map(t => ({
-                    title: `DEV-${t.taskNumber} ${t.title}`,
-                    start: new Date(t.dueDate!),
-                    end: new Date(t.dueDate!),
-                    allDay: true,
-                  })) || []}
+                  events={
+                    tasks
+                      ?.filter((t) => t.dueDate)
+                      .map((t) => ({
+                        title: `DEV-${t.taskNumber} ${t.title}`,
+                        start: new Date(t.dueDate!),
+                        end: new Date(t.dueDate!),
+                        allDay: true,
+                      })) || []
+                  }
                   startAccessor="start"
                   endAccessor="end"
-                  style={{ height: '100%' }}
+                  style={{ height: "100%" }}
                   className="text-xs"
                 />
               </div>
@@ -1051,7 +1214,9 @@ function DevPage() {
             <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-3 select-none">
               <div className="flex items-center gap-1.5">
                 <RefreshCw className="size-4 text-cyan-500 animate-pulse" />
-                <span className="text-xs font-bold text-slate-200 font-mono">Daily Updates Feed</span>
+                <span className="text-xs font-bold text-slate-200 font-mono">
+                  Daily Updates Feed
+                </span>
               </div>
               <span className="text-[8px] bg-slate-800 px-1.5 py-0.5 rounded text-cyan-400 font-mono uppercase tracking-wider">
                 live sync
@@ -1059,7 +1224,9 @@ function DevPage() {
             </div>
 
             <ScrollArea className="flex-1 pr-1 font-mono text-[10px] leading-relaxed">
-              {(commitsLoading || sprintUpdatesLoading) && <p className="text-slate-500 py-4 text-center">Loading feed...</p>}
+              {(commitsLoading || sprintUpdatesLoading) && (
+                <p className="text-slate-500 py-4 text-center">Loading feed...</p>
+              )}
               {!commitsLoading && !sprintUpdatesLoading && dailyUpdates.length === 0 && (
                 <div className="py-20 text-center text-slate-600">
                   <p>no daily activity yet</p>
@@ -1075,19 +1242,27 @@ function DevPage() {
                       {group.items.map((item) => (
                         <div key={item.id} className="pb-3 space-y-1 relative">
                           <div className="absolute -left-[11px] top-1.5 size-2 rounded-full bg-slate-700 border-2 border-slate-950" />
-                          
-                          {item.type === 'commit' && (
+
+                          {item.type === "commit" && (
                             <>
                               <div className="flex items-center justify-between text-[9px]">
                                 <div className="flex items-center gap-1.5">
                                   <span className="text-green-500 hover:underline cursor-pointer">
                                     {item.data.author.firstName} {item.data.author.lastName}
                                   </span>
-                                  {item.data.buildStatus === "SUCCESS" && <CheckCircle2 className="size-3 text-green-500" />}
-                                  {item.data.buildStatus === "FAILURE" && <AlertCircle className="size-3 text-red-500" />}
-                                  {item.data.buildStatus === "PENDING" && <Loader2 className="size-3 text-amber-500 animate-spin" />}
+                                  {item.data.buildStatus === "SUCCESS" && (
+                                    <CheckCircle2 className="size-3 text-green-500" />
+                                  )}
+                                  {item.data.buildStatus === "FAILURE" && (
+                                    <AlertCircle className="size-3 text-red-500" />
+                                  )}
+                                  {item.data.buildStatus === "PENDING" && (
+                                    <Loader2 className="size-3 text-amber-500 animate-spin" />
+                                  )}
                                 </div>
-                                <span className="text-slate-500 font-semibold">{item.data.hash}</span>
+                                <span className="text-slate-500 font-semibold">
+                                  {item.data.hash}
+                                </span>
                               </div>
                               <p className="text-slate-300 break-words font-semibold leading-tight">
                                 {item.data.message}
@@ -1098,25 +1273,36 @@ function DevPage() {
                                   {item.data.branch}
                                 </span>
                                 <span>
-                                  {new Date(item.data.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                  {new Date(item.data.createdAt).toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
                                 </span>
                               </div>
                               {item.data.task && (
                                 <div className="bg-slate-900 border border-slate-800 rounded px-1.5 py-0.5 mt-1.5 flex items-center justify-between text-[8px]">
                                   <span className="text-slate-400 truncate max-w-[130px]">
-                                    Task: <span className="font-semibold text-primary mr-1">DEV-{item.data.task.taskNumber}</span> {item.data.task.title}
+                                    Task:{" "}
+                                    <span className="font-semibold text-primary mr-1">
+                                      DEV-{item.data.task.taskNumber}
+                                    </span>{" "}
+                                    {item.data.task.title}
                                   </span>
-                                  <span className="text-primary font-bold">{item.data.task.status}</span>
+                                  <span className="text-primary font-bold">
+                                    {item.data.task.status}
+                                  </span>
                                 </div>
                               )}
                             </>
                           )}
 
-                          {item.type === 'task' && (
+                          {item.type === "task" && (
                             <>
                               <div className="flex items-center justify-between text-[9px]">
                                 <span className="text-primary hover:underline cursor-pointer">
-                                  {item.data.assignee ? `${item.data.assignee.firstName} ${item.data.assignee.lastName}` : "Unassigned"}
+                                  {item.data.assignee
+                                    ? `${item.data.assignee.firstName} ${item.data.assignee.lastName}`
+                                    : "Unassigned"}
                                 </span>
                                 <span className="text-slate-500 font-semibold flex items-center gap-1">
                                   <CheckSquare className="size-3 text-primary" />
@@ -1124,19 +1310,26 @@ function DevPage() {
                                 </span>
                               </div>
                               <p className="text-slate-300 break-words font-semibold leading-tight">
-                                <span className="text-primary mr-1">DEV-{item.data.taskNumber}</span>
+                                <span className="text-primary mr-1">
+                                  DEV-{item.data.taskNumber}
+                                </span>
                                 {item.data.title}
                               </p>
                               <div className="flex items-center justify-between text-[8px] text-slate-500 pt-0.5">
-                                <span className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">{item.data.type}</span>
+                                <span className="bg-slate-800 px-1 py-0.5 rounded text-slate-300">
+                                  {item.data.type}
+                                </span>
                                 <span>
-                                  {new Date(item.data.updatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                  {new Date(item.data.updatedAt).toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
                                 </span>
                               </div>
                             </>
                           )}
 
-                          {item.type === 'update' && (
+                          {item.type === "update" && (
                             <>
                               <div className="flex items-center justify-between text-[9px]">
                                 <span className="text-amber-400 hover:underline cursor-pointer">
@@ -1155,7 +1348,10 @@ function DevPage() {
                                   DEV-{item.data.task.taskNumber} {item.data.task.title}
                                 </span>
                                 <span>
-                                  {new Date(item.data.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                  {new Date(item.data.createdAt).toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
                                 </span>
                               </div>
                             </>
@@ -1394,11 +1590,13 @@ function DevPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">None</SelectItem>
-                  {tasks?.filter(t => !t.parentId).map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      DEV-{t.taskNumber} {t.title}
-                    </SelectItem>
-                  ))}
+                  {tasks
+                    ?.filter((t) => !t.parentId)
+                    .map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        DEV-{t.taskNumber} {t.title}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -1422,7 +1620,6 @@ function DevPage() {
         </DialogContent>
       </Dialog>
 
-
       {/* Set GitHub Username Dialog */}
       <Dialog open={githubDialogOpen} onOpenChange={setGithubDialogOpen}>
         <DialogContent className="max-w-sm">
@@ -1431,7 +1628,8 @@ function DevPage() {
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <p className="text-xs text-text-dim">
-              Link your GitHub username to automatically sync your commits and PRs to your Venus CRM tasks.
+              Link your GitHub username to automatically sync your commits and PRs to your Venus CRM
+              tasks.
             </p>
             <div className="space-y-1.5">
               <Label htmlFor="github-username">GitHub Username</Label>
@@ -1464,7 +1662,6 @@ function DevPage() {
           </div>
         </DialogContent>
       </Dialog>
-
     </div>
   );
 }

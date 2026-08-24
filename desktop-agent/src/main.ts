@@ -97,6 +97,9 @@ let sessionPollTimer: NodeJS.Timeout | null = null;
 let captureTimer: NodeJS.Timeout | null = null;
 let recorderWindow: BrowserWindow | null = null;
 let recordingInFlight = false;
+// Set when the server refuses this account's department (403). Cleared on
+// the next sign-in, since a different account may well be covered.
+let recordingDisabled = false;
 let activityPingTimer: NodeJS.Timeout | null = null;
 let tokenRefreshTimer: NodeJS.Timeout | null = null;
 let clockedIn = false;
@@ -262,6 +265,9 @@ async function applyAuthResult(
   accessToken = result.accessToken;
   refreshCookie = result.refreshCookie;
   currentUser = result.user;
+  // A different account may be in a recorded department even if the last one
+  // wasn't, so give recording a clean slate on every sign-in.
+  recordingDisabled = false;
   tokenStore.save(result.refreshCookie);
   refreshTrayMenu();
   loginWindow?.close();
@@ -441,8 +447,8 @@ async function checkSessionAndSchedule() {
     clockedIn = false;
     refreshTrayMenu();
     stopCaptureLoop();
-    // Clocking out mid-clip stops the recorder immediately; whatever was
-    // captured up to that point still uploads rather than being discarded.
+    retryQueue.length = 0; // clear any queued retries immediately
+    // Clocking out stops the recorder immediately
     if (recordingInFlight) recorderWindow?.webContents.send("recorder:stop");
     stopActivityPingLoop();
   }
@@ -469,7 +475,9 @@ function msUntilNextSlot(): number {
 
 function scheduleNextRecording() {
   stopCaptureLoop();
+  if (!clockedIn) return;
   captureTimer = setTimeout(async () => {
+    if (!clockedIn) return;
     await recordAndUpload();
     if (clockedIn) scheduleNextRecording();
   }, msUntilNextSlot());
@@ -479,7 +487,7 @@ function scheduleNextRecording() {
 // recording has finished and been handed back, so the caller can schedule the
 // next slot without two clips ever overlapping.
 async function recordAndUpload(): Promise<void> {
-  if (recordingInFlight || !recorderWindow) return;
+  if (!clockedIn || recordingInFlight || recordingDisabled || !recorderWindow) return;
 
   let sourceId: string;
   try {
@@ -499,6 +507,8 @@ async function recordAndUpload(): Promise<void> {
     refreshTrayMenu();
     return;
   }
+
+  if (!clockedIn) return;
 
   recordingInFlight = true;
   refreshTrayMenu();
@@ -537,7 +547,7 @@ async function recordAndUpload(): Promise<void> {
 
   recordingInFlight = false;
 
-  if (!result || result.buffer.length === 0) {
+  if (!clockedIn || !result || result.buffer.length === 0) {
     refreshTrayMenu();
     return;
   }
@@ -545,7 +555,7 @@ async function recordAndUpload(): Promise<void> {
 }
 
 async function uploadOne(webm: Buffer, durationSec: number) {
-  if (!accessToken) return;
+  if (!clockedIn || !accessToken) return;
   try {
     await uploadRecording(accessToken, webm, durationSec);
     console.log(`Recording uploaded at ${new Date().toLocaleTimeString()} (${durationSec}s)`);
@@ -555,13 +565,27 @@ async function uploadOne(webm: Buffer, durationSec: number) {
     await flushRetryQueue();
   } catch (err) {
     const status = (err as { status?: number }).status;
+    // 403 means this account's department isn't being recorded (see
+    // RECORDED_DEPARTMENTS on the server). That won't change mid-session, so
+    // stop the loop rather than burning a clip every slot to be refused again.
+    if (status === 403) {
+      recordingDisabled = true;
+      retryQueue.length = 0;
+      stopCaptureLoop();
+      lastCaptureError = null;
+      refreshTrayMenu();
+      return;
+    }
     // 409 means the employee clocked out between the recording and the
     // upload -- expected, not a failure worth retrying or alarming about.
-    if (status === 409) return;
+    if (status === 409) {
+      retryQueue.length = 0;
+      return;
+    }
     console.error("Recording upload failed", err);
     lastCaptureError = (err as Error).message;
     refreshTrayMenu();
-    if (retryQueue.length < MAX_RETRY_QUEUE) {
+    if (clockedIn && retryQueue.length < MAX_RETRY_QUEUE) {
       retryQueue.push({ webm, durationSec });
     }
   }

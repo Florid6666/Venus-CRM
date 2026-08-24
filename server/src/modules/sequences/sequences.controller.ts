@@ -44,6 +44,11 @@ export class SequencesController {
     return this.sequencesService.findFollowUps(user);
   }
 
+  @Patch("follow-ups/:id/dismiss")
+  dismissFollowUp(@Param("id") id: string, @CurrentUser() user: RequestUser) {
+    return this.sequencesService.dismissFollowUp(id, user);
+  }
+
   @Get(":id")
   findOne(@Param("id") id: string, @CurrentUser() user: RequestUser) {
     return this.sequencesService.findOne(id, user);
@@ -55,7 +60,11 @@ export class SequencesController {
   }
 
   @Patch(":id")
-  update(@Param("id") id: string, @Body() dto: UpdateSequenceDto, @CurrentUser() user: RequestUser) {
+  update(
+    @Param("id") id: string,
+    @Body() dto: UpdateSequenceDto,
+    @CurrentUser() user: RequestUser,
+  ) {
     return this.sequencesService.update(id, dto, user);
   }
 
@@ -93,7 +102,11 @@ export class SequencesController {
   }
 
   @Post(":id/enroll")
-  enroll(@Param("id") id: string, @Body() dto: EnrollContactsDto, @CurrentUser() user: RequestUser) {
+  enroll(
+    @Param("id") id: string,
+    @Body() dto: EnrollContactsDto,
+    @CurrentUser() user: RequestUser,
+  ) {
     return this.sequencesService.enroll(id, dto, user);
   }
 

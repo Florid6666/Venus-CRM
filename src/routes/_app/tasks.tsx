@@ -73,33 +73,26 @@ function TasksPage() {
 
   const openBugs = bugs.filter((b) => b.status !== "CLOSED");
   const criticalBugs = bugs.filter(
-    (b) => b.status !== "CLOSED" && (b.severity === "CRITICAL" || b.severity === "HIGH")
+    (b) => b.status !== "CLOSED" && (b.severity === "CRITICAL" || b.severity === "HIGH"),
   );
 
   const myTasks = (tasks as unknown as ProjectTaskDetail[]).filter(
     (t) =>
-      t.assigneeId === currentUser?.id ||
-      t.assignees?.some((a) => a.userId === currentUser?.id)
+      t.assigneeId === currentUser?.id || t.assignees?.some((a) => a.userId === currentUser?.id),
   );
 
   const myBugs = bugs.filter((b) => b.assigneeId === currentUser?.id && b.status !== "CLOSED");
   const testingQueue = (tasks as unknown as ProjectTaskDetail[]).filter(
-    (t) => t.testerId === currentUser?.id || t.status === "READY_FOR_TESTING"
+    (t) => t.testerId === currentUser?.id || t.status === "READY_FOR_TESTING",
   );
 
   if (selectedTaskId) {
     return (
       <div className="flex h-[calc(100vh-4rem)] w-full overflow-hidden bg-background text-text">
         <div className="flex-1 flex flex-col h-full overflow-hidden bg-card">
-          <ZohoTaskPagePanel
-            taskId={selectedTaskId}
-            onClose={() => setSelectedTaskId(null)}
-          />
+          <ZohoTaskPagePanel taskId={selectedTaskId} onClose={() => setSelectedTaskId(null)} />
         </div>
-        <TaskFormDialog
-          open={showCreateTaskDialog}
-          onOpenChange={setShowCreateTaskDialog}
-        />
+        <TaskFormDialog open={showCreateTaskDialog} onOpenChange={setShowCreateTaskDialog} />
       </div>
     );
   }
@@ -196,19 +189,29 @@ function TasksPage() {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
                   <span className="text-xs text-text-dim font-medium">Active Projects</span>
-                  <p className="text-2xl font-bold text-text font-mono mt-1">{activeProjectsCount}</p>
+                  <p className="text-2xl font-bold text-text font-mono mt-1">
+                    {activeProjectsCount}
+                  </p>
                 </div>
                 <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
                   <span className="text-xs text-text-dim font-medium">Tasks Under Testing</span>
-                  <p className="text-2xl font-bold text-purple-400 font-mono mt-1">{pendingTestingCount}</p>
+                  <p className="text-2xl font-bold text-purple-400 font-mono mt-1">
+                    {pendingTestingCount}
+                  </p>
                 </div>
                 <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
                   <span className="text-xs text-text-dim font-medium">Open Bugs</span>
-                  <p className="text-2xl font-bold text-amber-400 font-mono mt-1">{openBugs.length}</p>
+                  <p className="text-2xl font-bold text-amber-400 font-mono mt-1">
+                    {openBugs.length}
+                  </p>
                 </div>
                 <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-                  <span className="text-xs text-text-dim font-medium">Critical / High Severity</span>
-                  <p className="text-2xl font-bold text-destructive font-mono mt-1">{criticalBugs.length}</p>
+                  <span className="text-xs text-text-dim font-medium">
+                    Critical / High Severity
+                  </span>
+                  <p className="text-2xl font-bold text-destructive font-mono mt-1">
+                    {criticalBugs.length}
+                  </p>
                 </div>
               </div>
             </div>
@@ -227,8 +230,12 @@ function TasksPage() {
                   <div className="divide-y divide-amber-500/20">
                     {myBugs.map((b) => (
                       <div key={b.id} className="py-2 flex items-center justify-between text-xs">
-                        <span className="font-semibold text-text">Bug #{b.bugNumber}: {b.title}</span>
-                        <Badge variant="outline" className="text-[10px]">{BUG_STATUS_LABELS[b.status]}</Badge>
+                        <span className="font-semibold text-text">
+                          Bug #{b.bugNumber}: {b.title}
+                        </span>
+                        <Badge variant="outline" className="text-[10px]">
+                          {BUG_STATUS_LABELS[b.status]}
+                        </Badge>
                       </div>
                     ))}
                   </div>
@@ -243,7 +250,8 @@ function TasksPage() {
               <h2 className="text-lg font-bold text-text">Quality Assurance & Testing Queue</h2>
               <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-4 text-purple-300 text-xs">
                 <ShieldCheck className="h-5 w-5 text-purple-400 inline mr-2" />
-                Select any task below to perform Tester Validation, check Daily Updates, Time Logs, and Bug resolutions before final approval.
+                Select any task below to perform Tester Validation, check Daily Updates, Time Logs,
+                and Bug resolutions before final approval.
               </div>
             </div>
           )}
@@ -298,7 +306,7 @@ function TasksPage() {
                       (t.subtasks ?? []).reduce(
                         (acc, st) =>
                           acc + (st.bugs?.filter((b) => b.status !== "CLOSED").length ?? 0),
-                        0
+                        0,
                       );
 
                     return (
@@ -311,9 +319,7 @@ function TasksPage() {
                             : "hover:bg-card-hover/40"
                         }`}
                       >
-                        <td className="p-3 font-mono font-bold text-primary">
-                          #{t.taskNumber}
-                        </td>
+                        <td className="p-3 font-mono font-bold text-primary">#{t.taskNumber}</td>
                         <td className="p-3">
                           <div className="space-y-0.5">
                             <span className="font-bold text-text block">{t.title}</span>
@@ -382,13 +388,8 @@ function TasksPage() {
         </div>
       </div>
 
-
-
       {/* Create Task Form Dialog */}
-      <TaskFormDialog
-        open={showCreateTaskDialog}
-        onOpenChange={setShowCreateTaskDialog}
-      />
+      <TaskFormDialog open={showCreateTaskDialog} onOpenChange={setShowCreateTaskDialog} />
     </div>
   );
 }

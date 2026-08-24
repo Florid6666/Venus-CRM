@@ -1,4 +1,10 @@
-export type TaskStatus = "TODO" | "IN_PROGRESS" | "IN_REVIEW" | "READY_FOR_TESTING" | "CHANGES_REQUIRED" | "DONE";
+export type TaskStatus =
+  | "TODO"
+  | "IN_PROGRESS"
+  | "IN_REVIEW"
+  | "READY_FOR_TESTING"
+  | "CHANGES_REQUIRED"
+  | "DONE";
 export type TaskPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
 export type ProjectStatus = "ACTIVE" | "ON_HOLD" | "COMPLETED" | "ARCHIVED";
 export type RoleName = "ADMIN" | "MANAGER" | "EMPLOYEE";
@@ -23,6 +29,8 @@ export const TASK_STATUSES: TaskStatus[] = [
 export const TASK_PRIORITIES: TaskPriority[] = ["LOW", "MEDIUM", "HIGH", "URGENT"];
 export const PROJECT_STATUSES: ProjectStatus[] = ["ACTIVE", "ON_HOLD", "COMPLETED", "ARCHIVED"];
 
+// Fixed 3-value enum -- a local constant, not a fetched /roles endpoint (same
+// reasoning as TASK_STATUSES/TASK_PRIORITIES above: it never changes at runtime).
 export const ROLE_NAMES: RoleName[] = ["ADMIN", "MANAGER", "EMPLOYEE"];
 export const ROLE_LABELS: Record<RoleName, string> = {
   ADMIN: "Admin",
@@ -123,6 +131,7 @@ export interface Task {
   position: number;
   projectId: string | null;
   assigneeId: string | null;
+  testerId: string | null;
   creatorId: string;
   dueDate: string | null;
   storyPoints: number | null;
@@ -310,12 +319,16 @@ export interface BulkEmailCampaignDetail extends BulkEmailCampaign {
   recipients: BulkEmailRecipient[];
 }
 
+export type EmailConnectionType = "SMTP" | "OAUTH_GOOGLE" | "OAUTH_MICROSOFT";
+
 export interface EmailConnectionStatus {
   connected: boolean;
+  connectionType: EmailConnectionType | null;
   smtpHost: string | null;
   smtpPort: number | null;
   smtpSecure: boolean | null;
   smtpUsername: string | null;
+  providerAccountEmail: string | null;
   fromName: string | null;
   fromEmail: string | null;
   verified: boolean;
@@ -331,6 +344,29 @@ export interface NetworkDiagnosticResult {
   ok: boolean;
   ms: number;
   error?: string;
+}
+
+export type EmailDirection = "SENT" | "RECEIVED";
+
+// A message synced from a connected OAuth mailbox -- see
+// server/src/modules/email-oauth's EmailSyncEngineService.
+export interface SyncedEmail {
+  id: string;
+  connectionId: string;
+  direction: EmailDirection;
+  fromAddress: string;
+  toAddresses: string[];
+  ccAddresses: string[];
+  subject: string;
+  bodyPreview: string;
+  bodyHtml: string | null;
+  providerMessageId: string;
+  threadId: string | null;
+  occurredAt: string;
+  contactId: string | null;
+  dealId: string | null;
+  isRead: boolean;
+  createdAt: string;
 }
 
 export interface SequenceSend {
@@ -523,11 +559,12 @@ export interface Deal {
   companyId: string | null;
   company: { id: string; name: string } | null;
   contactId: string | null;
-  contact: Pick<PersonRef, "id" | "firstName" | "lastName"> | null;
+  contact: (Pick<PersonRef, "id" | "firstName" | "lastName"> & { phone: string | null }) | null;
   ownerId: string;
   owner: PersonRef;
   notes: string | null;
   expectedCloseDate: string | null;
+  followUpAt: string | null;
   closedAt: string | null;
   approvalStatus: DealApprovalStatus;
   departmentId: string | null;
@@ -617,7 +654,12 @@ export interface AnalyticsSummary {
   };
   org: {
     totalEmployees: number;
-    departments: { id: string; name: string; employeeCount: number; monthlyTarget: number | null }[];
+    departments: {
+      id: string;
+      name: string;
+      employeeCount: number;
+      monthlyTarget: number | null;
+    }[];
   };
   dev: {
     velocityLeaderboard: { assigneeId: string; name: string; storyPoints: number }[];
@@ -694,12 +736,7 @@ export interface KBArticle {
 
 // ─── Leave Management ───────────────────────────────────────────────────────
 
-export type LeaveType =
-  | "ANNUAL"
-  | "SICK"
-  | "CASUAL"
-  | "UNPAID"
-  | "MATERNITY_PATERNITY";
+export type LeaveType = "ANNUAL" | "SICK" | "CASUAL" | "UNPAID" | "MATERNITY_PATERNITY";
 
 export type LeaveStatus = "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
 
@@ -720,10 +757,10 @@ export const LEAVE_TYPE_LABELS: Record<LeaveType, string> = {
 };
 
 export const LEAVE_TYPE_COLORS: Record<LeaveType, string> = {
-  ANNUAL: "#6366f1",       // indigo
-  SICK: "#ef4444",         // red
-  CASUAL: "#f59e0b",       // amber
-  UNPAID: "#64748b",       // slate
+  ANNUAL: "#6366f1", // indigo
+  SICK: "#ef4444", // red
+  CASUAL: "#f59e0b", // amber
+  UNPAID: "#64748b", // slate
   MATERNITY_PATERNITY: "#ec4899", // pink
 };
 
@@ -791,6 +828,135 @@ export interface WorkSession {
   date: string; // Midnight UTC of the clock-in date
   createdAt: string;
   updatedAt: string;
+}
+
+// ─── Telephony (JustCall calling) ───────────────────────────────────────────
+
+export type CallDirection = "OUTBOUND" | "INBOUND";
+export type CallStatus =
+  | "INITIATED"
+  | "RINGING"
+  | "CONNECTED"
+  | "COMPLETED"
+  | "FAILED"
+  | "BUSY"
+  | "NO_ANSWER";
+
+export interface TelephonyConnectionStatus {
+  connected: boolean;
+  connectedByName: string | null;
+  connectedAt: string | null;
+}
+
+export interface PhoneNumber {
+  id: string;
+  provider: string;
+  providerId: string;
+  e164: string;
+  country: string;
+  label: string | null;
+  departmentId: string | null;
+  smsCapable: boolean;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface Call {
+  id: string;
+  provider: string;
+  providerCallId: string | null;
+  direction: CallDirection;
+  agentId: string;
+  agent: PersonRef;
+  contactId: string | null;
+  contact: { id: string; firstName: string; lastName: string; phone: string | null } | null;
+  companyId: string | null;
+  company: { id: string; name: string } | null;
+  dealId: string | null;
+  deal: { id: string; title: string } | null;
+  campaignId: string | null;
+  fromNumber: string | null;
+  toNumber: string;
+  status: CallStatus;
+  durationSec: number | null;
+  startedAt: string;
+  answeredAt: string | null;
+  endedAt: string | null;
+  recordingUrl: string | null;
+  recordingStatus: string | null;
+  disposition: string | null;
+  notes: string | null;
+  nextFollowUpAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const CALL_DISPOSITIONS = [
+  "Interested",
+  "Not Interested",
+  "Follow Up",
+  "Callback Requested",
+  "Wrong Number",
+  "No Requirement",
+  "Qualified",
+  "Converted",
+] as const;
+
+export interface CallLookupResult {
+  contactId: string;
+  firstName: string;
+  lastName: string;
+  phone: string | null;
+  company: { id: string; name: string } | null;
+  deal: { id: string; title: string; value: number } | null;
+}
+
+export interface CallAnalytics {
+  totalCalls: number;
+  connected: number;
+  missed: number;
+  noAnswer: number;
+  totalTalkSec: number;
+  avgCallSec: number;
+  connectionRate: number;
+  byAgent: Array<{
+    agentId: string;
+    name: string;
+    calls: number;
+    connected: number;
+    talkSec: number;
+  }>;
+}
+
+export type CallCampaignLeadStatus = "PENDING" | "CALLING" | "DONE";
+
+export interface CallCampaignLead {
+  id: string;
+  campaignId: string;
+  contactId: string;
+  contact: { id: string; firstName: string; lastName: string; phone: string | null };
+  assignedToId: string | null;
+  assignedTo: PersonRef | null;
+  status: CallCampaignLeadStatus;
+  createdAt: string;
+}
+
+export interface CallCampaign {
+  id: string;
+  name: string;
+  departmentId: string | null;
+  creatorId: string;
+  creator: Pick<PersonRef, "id" | "firstName" | "lastName">;
+  createdAt: string;
+  _count: { leads: number };
+}
+
+export interface CallCampaignDetail extends CallCampaign {
+  leads: CallCampaignLead[];
+}
+
+export interface CallCampaignQueueLead extends CallCampaignLead {
+  campaign: { id: string; name: string };
 }
 
 // ─── Zoho Projects & Bug Tracking ──────────────────────────────────────────
@@ -957,6 +1123,3 @@ export interface ProjectTaskDetail {
   createdAt: string;
   updatedAt: string;
 }
-
-
-

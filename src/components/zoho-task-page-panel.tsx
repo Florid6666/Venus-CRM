@@ -71,15 +71,17 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
   const createTimeLog = useCreateTimeLog();
   const reviewTimeLog = useReviewTimeLog();
 
-  const handleUpdateTimeLogStatus = async (logId: string, newStatus: string) => {
+  const handleUpdateTimeLogStatus = async (logId: string, newStatus: "APPROVED" | "REJECTED") => {
     try {
       await reviewTimeLog.mutateAsync({
         id: logId,
-        input: { status: newStatus as any },
+        input: { status: newStatus },
       });
       toast.success(`Time log marked as ${newStatus}`);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to update time log status");
+    } catch (err) {
+      toast.error(
+        err instanceof Error && err.message ? err.message : "Failed to update time log status",
+      );
     }
   };
 
@@ -114,7 +116,9 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
 
   // Calendar Date Selection & Filter states
   const [updateDate, setUpdateDate] = useState<Date>(new Date());
-  const [selectedUpdateDateFilter, setSelectedUpdateDateFilter] = useState<Date | undefined>(undefined);
+  const [selectedUpdateDateFilter, setSelectedUpdateDateFilter] = useState<Date | undefined>(
+    undefined,
+  );
 
   const [logDate, setLogDate] = useState<Date>(new Date());
   const [selectedLogDateFilter, setSelectedLogDateFilter] = useState<Date | undefined>(undefined);
@@ -131,11 +135,7 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
   }
 
   if (error || !task) {
-    return (
-      <div className="p-8 text-destructive">
-        Failed to load task details.
-      </div>
-    );
+    return <div className="p-8 text-destructive">Failed to load task details.</div>;
   }
 
   const detailedTask = task as unknown as ProjectTaskDetail;
@@ -152,7 +152,7 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
     (detailedTask.timeLogs ?? []).reduce((acc, l) => acc + l.minutes, 0) +
     (detailedTask.subtasks ?? []).reduce(
       (acc, st) => acc + (st.timeLogs ?? []).reduce((stAcc, l) => stAcc + l.minutes, 0),
-      0
+      0,
     );
 
   const allTaskBugs = [
@@ -176,7 +176,11 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
   const isReadyForTesting = detailedTask.status === "READY_FOR_TESTING";
 
   const canCompleteTask =
-    hasDailyUpdates && hasTimeLogs && allBugsClosed && allSubtasksDone && (isReadyForTesting || detailedTask.status === "DONE");
+    hasDailyUpdates &&
+    hasTimeLogs &&
+    allBugsClosed &&
+    allSubtasksDone &&
+    (isReadyForTesting || detailedTask.status === "DONE");
   // Only the designated Tester (or a Manager/Admin override) may trigger completion —
   // must mirror the server-side guard in tasks.service.ts validateStatusTransition.
   const canApproveCompletion = isTester || isManagerOrAdmin;
@@ -186,8 +190,10 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
     try {
       await updateTask.mutateAsync({ id: taskId, input: { status: newStatus } });
       toast.success(`Task status updated to ${TASK_STATUS_LABELS[newStatus]}`);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to update task status");
+    } catch (err) {
+      toast.error(
+        err instanceof Error && err.message ? err.message : "Failed to update task status",
+      );
     }
   };
 
@@ -206,8 +212,8 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
       setSubtaskAssigneeId("");
       setShowSubtaskForm(false);
       toast.success("Subtask created successfully!");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to create subtask");
+    } catch (err) {
+      toast.error(err instanceof Error && err.message ? err.message : "Failed to create subtask");
     }
   };
 
@@ -239,8 +245,8 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
       setNotes("");
       setShowUpdateForm(false);
       toast.success("Daily work update recorded!");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to add daily update");
+    } catch (err) {
+      toast.error(err instanceof Error && err.message ? err.message : "Failed to add daily update");
     }
   };
 
@@ -261,8 +267,8 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
       setTimeLogSummary("");
       setShowTimeLogForm(false);
       toast.success("Time log submitted!");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to record time log");
+    } catch (err) {
+      toast.error(err instanceof Error && err.message ? err.message : "Failed to record time log");
     }
   };
 
@@ -283,8 +289,8 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
       setBugDescription("");
       setShowBugForm(false);
       toast.success("Bug logged successfully!");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to create bug");
+    } catch (err) {
+      toast.error(err instanceof Error && err.message ? err.message : "Failed to create bug");
     }
   };
 
@@ -292,8 +298,10 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
     try {
       await updateBug.mutateAsync({ id: bugId, input: { status } });
       toast.success(`Bug status updated to ${BUG_STATUS_LABELS[status]}`);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to update bug status");
+    } catch (err) {
+      toast.error(
+        err instanceof Error && err.message ? err.message : "Failed to update bug status",
+      );
     }
   };
 
@@ -303,8 +311,8 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
       await addBugComment.mutateAsync({ id: bugId, content: bugCommentText.trim() });
       setBugCommentText("");
       toast.success("Comment added to bug.");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to add comment");
+    } catch (err) {
+      toast.error(err instanceof Error && err.message ? err.message : "Failed to add comment");
     }
   };
 
@@ -337,9 +345,7 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                 </span>
               )}
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-text">
-              {detailedTask.title}
-            </h1>
+            <h1 className="text-2xl font-bold tracking-tight text-text">{detailedTask.title}</h1>
           </div>
 
           {/* Workflow Status Action Bar */}
@@ -361,7 +367,7 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                     onClick={() => {
                       if (st === "DONE" && !isTester && !isManagerOrAdmin) {
                         toast.error(
-                          "Developers cannot directly mark tasks Completed. Please move to Ready for Testing for Tester validation."
+                          "Developers cannot directly mark tasks Completed. Please move to Ready for Testing for Tester validation.",
                         );
                         return;
                       }
@@ -403,13 +409,16 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
             <div className="flex items-center gap-1.5">
               {detailedTask.assignees && detailedTask.assignees.length > 0 ? (
                 detailedTask.assignees.map((a) => (
-                  <div key={a.id} className="flex items-center gap-1.5 rounded-full bg-background px-2.5 py-1 border border-border">
+                  <div
+                    key={a.id}
+                    className="flex items-center gap-1.5 rounded-full bg-background px-2.5 py-1 border border-border"
+                  >
                     <Avatar className="h-4 w-4">
-                      <AvatarFallback className="text-[9px]">
-                        {a.user.firstName[0]}
-                      </AvatarFallback>
+                      <AvatarFallback className="text-[9px]">{a.user.firstName[0]}</AvatarFallback>
                     </Avatar>
-                    <span className="font-semibold text-text">{a.user.firstName} {a.user.lastName}</span>
+                    <span className="font-semibold text-text">
+                      {a.user.firstName} {a.user.lastName}
+                    </span>
                   </div>
                 ))
               ) : detailedTask.assignee ? (
@@ -477,7 +486,9 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
           <div className="flex items-center gap-2">
             <BugIcon className="h-4 w-4 text-amber-400" />
             <span className="font-medium text-text-dim">Bugs:</span>
-            <span className={`font-bold font-mono ${openBugsCount > 0 ? "text-destructive" : "text-emerald-400"}`}>
+            <span
+              className={`font-bold font-mono ${openBugsCount > 0 ? "text-destructive" : "text-emerald-400"}`}
+            >
               {openBugsCount} Open / {allTaskBugs.length} Total
             </span>
           </div>
@@ -612,7 +623,9 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                     Rule 2 Active: Multiple Employees Assigned
                   </strong>
                   <p>
-                    This task has 2 or more assigned contributors. Per collaboration rules, please structure this task into distinct subtasks assigned to individual developers below.
+                    This task has 2 or more assigned contributors. Per collaboration rules, please
+                    structure this task into distinct subtasks assigned to individual developers
+                    below.
                   </p>
                 </div>
               </div>
@@ -623,9 +636,7 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-base font-bold text-text">Subtasks Breakdown</h3>
-                  <p className="text-xs text-text-dim">
-                    Assign specific sub-modules to developers
-                  </p>
+                  <p className="text-xs text-text-dim">Assign specific sub-modules to developers</p>
                 </div>
                 <Button
                   size="sm"
@@ -689,9 +700,7 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                     >
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          <span className="font-semibold text-xs text-text">
-                            {st.title}
-                          </span>
+                          <span className="font-semibold text-xs text-text">{st.title}</span>
                           <Badge variant="outline" className="text-[10px]">
                             {TASK_STATUS_LABELS[st.status]}
                           </Badge>
@@ -785,14 +794,23 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                   <div className="flex justify-between items-center">
                     <span>Selected Date:</span>
                     <span className="font-semibold text-text">
-                      {selectedUpdateDateFilter ? format(selectedUpdateDateFilter, "PP") : "All Dates"}
+                      {selectedUpdateDateFilter
+                        ? format(selectedUpdateDateFilter, "PP")
+                        : "All Dates"}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span>Updates Logged:</span>
                     <span className="font-mono font-bold text-primary">
-                      {(detailedTask.updates ?? [])
-                        .filter((u) => !selectedUpdateDateFilter || new Date(u.createdAt).toDateString() === selectedUpdateDateFilter.toDateString()).length} entry(s)
+                      {
+                        (detailedTask.updates ?? []).filter(
+                          (u) =>
+                            !selectedUpdateDateFilter ||
+                            new Date(u.createdAt).toDateString() ===
+                              selectedUpdateDateFilter.toDateString(),
+                        ).length
+                      }{" "}
+                      entry(s)
                     </span>
                   </div>
                 </div>
@@ -808,7 +826,7 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                   >
                     <div className="flex items-center justify-between">
                       <h4 className="text-sm font-bold text-primary">Daily Progress Entry</h4>
-                      
+
                       {/* Calendar Picker Field */}
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-semibold text-text-dim flex items-center gap-1">
@@ -900,7 +918,12 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                 {detailedTask.updates && detailedTask.updates.length > 0 ? (
                   <div className="space-y-4">
                     {detailedTask.updates
-                      .filter((u) => !selectedUpdateDateFilter || new Date(u.createdAt).toDateString() === selectedUpdateDateFilter.toDateString())
+                      .filter(
+                        (u) =>
+                          !selectedUpdateDateFilter ||
+                          new Date(u.createdAt).toDateString() ===
+                            selectedUpdateDateFilter.toDateString(),
+                      )
                       .map((u) => (
                         <div
                           key={u.id}
@@ -943,9 +966,7 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-base font-bold text-text">Time Logging System</h3>
-                <p className="text-xs text-text-dim">
-                  Log working hours spent on tasks & subtasks
-                </p>
+                <p className="text-xs text-text-dim">Log working hours spent on tasks & subtasks</p>
               </div>
               <Button
                 size="sm"
@@ -992,9 +1013,17 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                   <div className="flex justify-between items-center">
                     <span>Logged Hours:</span>
                     <span className="font-mono font-bold text-emerald-400">
-                      {((detailedTask.timeLogs ?? [])
-                        .filter((l) => !selectedLogDateFilter || new Date(l.date).toDateString() === selectedLogDateFilter.toDateString())
-                        .reduce((acc, l) => acc + l.minutes, 0) / 60).toFixed(1)} hrs
+                      {(
+                        (detailedTask.timeLogs ?? [])
+                          .filter(
+                            (l) =>
+                              !selectedLogDateFilter ||
+                              new Date(l.date).toDateString() ===
+                                selectedLogDateFilter.toDateString(),
+                          )
+                          .reduce((acc, l) => acc + l.minutes, 0) / 60
+                      ).toFixed(1)}{" "}
+                      hrs
                     </span>
                   </div>
                 </div>
@@ -1087,7 +1116,11 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                       >
                         Cancel
                       </Button>
-                      <Button type="submit" size="sm" className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white">
+                      <Button
+                        type="submit"
+                        size="sm"
+                        className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white"
+                      >
                         Save Time Log
                       </Button>
                     </div>
@@ -1109,24 +1142,37 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                       </thead>
                       <tbody className="divide-y divide-border">
                         {detailedTask.timeLogs
-                          .filter((l) => !selectedLogDateFilter || new Date(l.date).toDateString() === selectedLogDateFilter.toDateString())
+                          .filter(
+                            (l) =>
+                              !selectedLogDateFilter ||
+                              new Date(l.date).toDateString() ===
+                                selectedLogDateFilter.toDateString(),
+                          )
                           .map((l) => (
                             <tr key={l.id} className="hover:bg-card-hover/40">
-                              <td className="p-3 font-semibold text-text">{l.user.firstName} {l.user.lastName}</td>
+                              <td className="p-3 font-semibold text-text">
+                                {l.user.firstName} {l.user.lastName}
+                              </td>
                               <td className="p-3 text-text-dim font-mono flex items-center gap-1">
                                 <CalendarIcon className="h-3 w-3 text-emerald-400" />
                                 {new Date(l.date).toLocaleDateString()}
                               </td>
-                              <td className="p-3 font-mono font-bold text-emerald-400">{(l.minutes / 60).toFixed(1)} hrs</td>
+                              <td className="p-3 font-mono font-bold text-emerald-400">
+                                {(l.minutes / 60).toFixed(1)} hrs
+                              </td>
                               <td className="p-3 text-text">{l.note || "No details"}</td>
                               <td className="p-3">
                                 {isManagerOrAdmin ? (
                                   <select
                                     value={l.status || "PENDING"}
-                                    onChange={(e) => handleUpdateTimeLogStatus(l.id, e.target.value)}
+                                    onChange={(e) =>
+                                      handleUpdateTimeLogStatus(
+                                        l.id,
+                                        e.target.value as "APPROVED" | "REJECTED",
+                                      )
+                                    }
                                     className="rounded border border-border bg-background px-2 py-1 text-[11px] font-semibold text-text"
                                   >
-                                    <option value="PENDING">🟡 PENDING</option>
                                     <option value="APPROVED">🟢 APPROVED</option>
                                     <option value="REJECTED">🔴 REJECTED</option>
                                   </select>
@@ -1137,11 +1183,17 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                                       l.status === "APPROVED"
                                         ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                                         : l.status === "REJECTED"
-                                        ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
-                                        : "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                                          ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                                          : "bg-amber-500/10 text-amber-400 border-amber-500/20"
                                     }`}
                                   >
-                                    {l.status ? (l.status === "APPROVED" ? "APPROVED" : l.status === "REJECTED" ? "REJECTED" : "PENDING") : "PENDING"}
+                                    {l.status
+                                      ? l.status === "APPROVED"
+                                        ? "APPROVED"
+                                        : l.status === "REJECTED"
+                                          ? "REJECTED"
+                                          : "PENDING"
+                                      : "PENDING"}
                                   </Badge>
                                 )}
                               </td>
@@ -1199,7 +1251,9 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-text-dim">Target Task / Subtask Scope</label>
+                    <label className="text-xs font-semibold text-text-dim">
+                      Target Task / Subtask Scope
+                    </label>
                     <select
                       value={bugSubtaskId}
                       onChange={(e) => setBugSubtaskId(e.target.value)}
@@ -1262,7 +1316,9 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xs font-semibold text-text-dim">Description & Reproduction Steps</label>
+                  <label className="text-xs font-semibold text-text-dim">
+                    Description & Reproduction Steps
+                  </label>
                   <Textarea
                     placeholder="Describe what went wrong and steps to reproduce..."
                     value={bugDescription}
@@ -1281,7 +1337,11 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                   >
                     Cancel
                   </Button>
-                  <Button type="submit" size="sm" className="text-xs bg-amber-600 hover:bg-amber-500">
+                  <Button
+                    type="submit"
+                    size="sm"
+                    className="text-xs bg-amber-600 hover:bg-amber-500"
+                  >
                     Log Bug
                   </Button>
                 </div>
@@ -1306,11 +1366,15 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                     </thead>
                     <tbody className="divide-y divide-border">
                       {allTaskBugs.map((b) => {
-                        const targetSubtask = detailedTask.subtasks?.find((st) => st.id === b.subtaskId);
+                        const targetSubtask = detailedTask.subtasks?.find(
+                          (st) => st.id === b.subtaskId,
+                        );
                         return (
                           <tr
                             key={b.id}
-                            onClick={() => setSelectedBugId((prev) => (prev === b.id ? null : b.id))}
+                            onClick={() =>
+                              setSelectedBugId((prev) => (prev === b.id ? null : b.id))
+                            }
                             className={`hover:bg-card-hover/40 cursor-pointer ${
                               selectedBugId === b.id ? "bg-primary/10 font-medium" : ""
                             }`}
@@ -1318,16 +1382,20 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                             <td className="p-3 font-mono font-bold text-amber-400">
                               #{b.bugNumber}
                             </td>
-                            <td className="p-3 font-semibold text-text">
-                              {b.title}
-                            </td>
+                            <td className="p-3 font-semibold text-text">{b.title}</td>
                             <td className="p-3">
-                              {b.subtaskId || (b as any).subtaskTitle ? (
-                                <Badge variant="secondary" className="text-[10px] bg-purple-500/10 text-purple-300 border-purple-500/20 font-medium">
-                                  Subtask: {targetSubtask?.title ?? (b as any).subtaskTitle ?? "Subtask"}
+                              {b.subtaskId ? (
+                                <Badge
+                                  variant="secondary"
+                                  className="text-[10px] bg-purple-500/10 text-purple-300 border-purple-500/20 font-medium"
+                                >
+                                  Subtask: {targetSubtask?.title ?? "Subtask"}
                                 </Badge>
                               ) : (
-                                <Badge variant="outline" className="text-[10px] text-primary border-primary/20 font-medium">
+                                <Badge
+                                  variant="outline"
+                                  className="text-[10px] text-primary border-primary/20 font-medium"
+                                >
                                   Task #{detailedTask.taskNumber}
                                 </Badge>
                               )}
@@ -1342,7 +1410,9 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                               </span>
                             </td>
                             <td className="p-3 text-text-dim">
-                              {b.assignee ? `${b.assignee.firstName} ${b.assignee.lastName}` : "Unassigned"}
+                              {b.assignee
+                                ? `${b.assignee.firstName} ${b.assignee.lastName}`
+                                : "Unassigned"}
                             </td>
                             <td className="p-3">
                               <Badge
@@ -1366,7 +1436,7 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                                     isTester ||
                                     isManagerOrAdmin ||
                                     (st !== "CLOSED" && st !== "REOPENED") ||
-                                    st === b.status
+                                    st === b.status,
                                 ).map((st) => (
                                   <option key={st} value={st}>
                                     {BUG_STATUS_LABELS[st]}
@@ -1424,7 +1494,9 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                           <span className="text-text-dim block text-[11px]">Subtask Scope:</span>
                           <strong className="text-purple-300 font-semibold">
                             {selectedBug.subtaskId
-                              ? (detailedTask.subtasks?.find((st) => st.id === selectedBug.subtaskId)?.title ?? "Subtask Scope")
+                              ? (detailedTask.subtasks?.find(
+                                  (st) => st.id === selectedBug.subtaskId,
+                                )?.title ?? "Subtask Scope")
                               : "Main Task Scope"}
                           </strong>
                         </div>
@@ -1437,7 +1509,9 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                           </div>
                         )}
                         <div>
-                          <span className="text-text-dim block text-[11px]">Assigned Developer:</span>
+                          <span className="text-text-dim block text-[11px]">
+                            Assigned Developer:
+                          </span>
                           <span className="text-text font-medium">
                             {selectedBug.assignee
                               ? `${selectedBug.assignee.firstName} ${selectedBug.assignee.lastName}`
@@ -1447,15 +1521,21 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                       </div>
                     </div>
 
-                    <p className="text-xs text-text leading-relaxed">{selectedBug.description || "No description provided."}</p>
+                    <p className="text-xs text-text leading-relaxed">
+                      {selectedBug.description || "No description provided."}
+                    </p>
 
                     {/* Bug Comments History */}
                     <div className="space-y-3 pt-2">
-                      <h5 className="text-xs font-bold uppercase text-text-dim">Discussion & Activity</h5>
+                      <h5 className="text-xs font-bold uppercase text-text-dim">
+                        Discussion & Activity
+                      </h5>
                       {(selectedBug.comments ?? []).map((c) => (
                         <div key={c.id} className="rounded-lg bg-background p-3 text-xs space-y-1">
                           <div className="flex items-center justify-between text-text-dim text-[11px]">
-                            <span className="font-semibold text-text">{c.user.firstName} {c.user.lastName}</span>
+                            <span className="font-semibold text-text">
+                              {c.user.firstName} {c.user.lastName}
+                            </span>
                             <span>{new Date(c.createdAt).toLocaleString()}</span>
                           </div>
                           <p className="text-text">{c.content}</p>
@@ -1497,16 +1577,18 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
             <div className="rounded-xl border border-purple-500/30 bg-purple-500/5 p-6 shadow-sm space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-bold text-purple-300">
-                    Tester Validation Dashboard
-                  </h3>
+                  <h3 className="text-lg font-bold text-purple-300">Tester Validation Dashboard</h3>
                   <p className="text-xs text-text-dim">
                     Strict completion checks required before marking task Completed
                   </p>
                 </div>
                 <Badge
                   variant={canCompleteTask ? "default" : "outline"}
-                  className={canCompleteTask ? "bg-emerald-600 text-white" : "text-amber-400 border-amber-400/30"}
+                  className={
+                    canCompleteTask
+                      ? "bg-emerald-600 text-white"
+                      : "text-amber-400 border-amber-400/30"
+                  }
                 >
                   {canCompleteTask ? "Validation Passed" : "Validation Pending"}
                 </Badge>
@@ -1515,7 +1597,9 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
               {/* Validation Checklist Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Check 1: Dev Work Finished */}
-                <div className={`flex items-start gap-3 rounded-lg border p-4 ${isReadyForTesting || detailedTask.status === "DONE" ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300" : "border-amber-500/30 bg-amber-500/10 text-amber-300"}`}>
+                <div
+                  className={`flex items-start gap-3 rounded-lg border p-4 ${isReadyForTesting || detailedTask.status === "DONE" ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300" : "border-amber-500/30 bg-amber-500/10 text-amber-300"}`}
+                >
                   {isReadyForTesting || detailedTask.status === "DONE" ? (
                     <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400 mt-0.5" />
                   ) : (
@@ -1524,13 +1608,16 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                   <div className="text-xs space-y-1">
                     <strong className="font-bold">1. Development Work Finished</strong>
                     <p>
-                      Task status must be marked &quot;Ready for Testing&quot;. Current: {TASK_STATUS_LABELS[detailedTask.status]}.
+                      Task status must be marked &quot;Ready for Testing&quot;. Current:{" "}
+                      {TASK_STATUS_LABELS[detailedTask.status]}.
                     </p>
                   </div>
                 </div>
 
                 {/* Check 2: Daily Updates Logged */}
-                <div className={`flex items-start gap-3 rounded-lg border p-4 ${hasDailyUpdates ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300" : "border-amber-500/30 bg-amber-500/10 text-amber-300"}`}>
+                <div
+                  className={`flex items-start gap-3 rounded-lg border p-4 ${hasDailyUpdates ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300" : "border-amber-500/30 bg-amber-500/10 text-amber-300"}`}
+                >
                   {hasDailyUpdates ? (
                     <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400 mt-0.5" />
                   ) : (
@@ -1547,7 +1634,9 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                 </div>
 
                 {/* Check 3: Time Logs Submitted */}
-                <div className={`flex items-start gap-3 rounded-lg border p-4 ${hasTimeLogs ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300" : "border-amber-500/30 bg-amber-500/10 text-amber-300"}`}>
+                <div
+                  className={`flex items-start gap-3 rounded-lg border p-4 ${hasTimeLogs ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300" : "border-amber-500/30 bg-amber-500/10 text-amber-300"}`}
+                >
                   {hasTimeLogs ? (
                     <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400 mt-0.5" />
                   ) : (
@@ -1564,7 +1653,9 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                 </div>
 
                 {/* Check 4: All Bugs Closed */}
-                <div className={`flex items-start gap-3 rounded-lg border p-4 ${allBugsClosed ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300" : "border-destructive/30 bg-destructive/10 text-destructive font-bold"}`}>
+                <div
+                  className={`flex items-start gap-3 rounded-lg border p-4 ${allBugsClosed ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300" : "border-destructive/30 bg-destructive/10 text-destructive font-bold"}`}
+                >
                   {allBugsClosed ? (
                     <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400 mt-0.5" />
                   ) : (
@@ -1581,7 +1672,9 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                 </div>
 
                 {/* Check 5: Subtasks Completed */}
-                <div className={`flex items-start gap-3 rounded-lg border p-4 ${allSubtasksDone ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300" : "border-amber-500/30 bg-amber-500/10 text-amber-300"}`}>
+                <div
+                  className={`flex items-start gap-3 rounded-lg border p-4 ${allSubtasksDone ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300" : "border-amber-500/30 bg-amber-500/10 text-amber-300"}`}
+                >
                   {allSubtasksDone ? (
                     <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-400 mt-0.5" />
                   ) : (
@@ -1606,7 +1699,9 @@ export function ZohoTaskPagePanel({ taskId, onClose }: ZohoTaskPagePanelProps) {
                   </p>
                 )}
                 <Button
-                  disabled={!canCompleteTask || !canApproveCompletion || detailedTask.status === "DONE"}
+                  disabled={
+                    !canCompleteTask || !canApproveCompletion || detailedTask.status === "DONE"
+                  }
                   onClick={() => handleStatusChange("DONE")}
                   className="gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold"
                 >

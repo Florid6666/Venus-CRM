@@ -25,6 +25,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { DealActivityTimeline } from "@/components/deal-activity-timeline";
 import { ProposalUploadDialog } from "@/components/proposal-upload-dialog";
+import { CallButton } from "@/components/telephony/call-button";
 import {
   useApproveDeal,
   useArchiveDeal,
@@ -82,6 +83,7 @@ function DealDetailPage() {
   const [contactId, setContactId] = useState<string>(NO_CONTACT);
   const [ownerId, setOwnerId] = useState<string>("");
   const [expectedCloseDate, setExpectedCloseDate] = useState("");
+  const [followUpAt, setFollowUpAt] = useState("");
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -102,6 +104,7 @@ function DealDetailPage() {
     setContactId(deal.contactId ?? NO_CONTACT);
     setOwnerId(deal.ownerId);
     setExpectedCloseDate(deal.expectedCloseDate ? deal.expectedCloseDate.slice(0, 10) : "");
+    setFollowUpAt(deal.followUpAt ? deal.followUpAt.slice(0, 10) : "");
     setNotes(deal.notes ?? "");
   }, [deal]);
 
@@ -135,6 +138,7 @@ function DealDetailPage() {
           ownerId: ownerId || undefined,
           notes: notes || null,
           expectedCloseDate: expectedCloseDate || null,
+          followUpAt: followUpAt || null,
         },
       });
       if (result.approvalStatus === "PENDING" && deal?.approvalStatus !== "PENDING") {
@@ -321,6 +325,33 @@ function DealDetailPage() {
             </div>
           </div>
 
+          <div className="space-y-1.5">
+            <Label htmlFor="deal-follow-up">Follow-up reminder</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                id="deal-follow-up"
+                type="date"
+                value={followUpAt}
+                onChange={(e) => setFollowUpAt(e.target.value)}
+                className="max-w-[200px]"
+              />
+              {followUpAt && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-text-dim"
+                  onClick={() => setFollowUpAt("")}
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-text-dim">
+              {deal.owner.firstName} gets an in-app reminder and an email once this date arrives.
+            </p>
+          </div>
+
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="space-y-1.5">
               <Label>Company</Label>
@@ -403,6 +434,17 @@ function DealDetailPage() {
           </SummaryRow>
           <SummaryRow icon={UserCircle2} label="Contact">
             {deal.contact ? `${deal.contact.firstName} ${deal.contact.lastName}` : "—"}
+            {deal.contact?.phone && (
+              <CallButton
+                toNumber={deal.contact.phone}
+                displayName={`${deal.contact.firstName} ${deal.contact.lastName}`}
+                contactId={deal.contact.id}
+                companyId={deal.companyId ?? undefined}
+                dealId={deal.id}
+                size="icon"
+                className="ml-1.5 size-6 align-middle"
+              />
+            )}
           </SummaryRow>
           <SummaryRow icon={CalendarClock} label="Expected close">
             {deal.expectedCloseDate ? new Date(deal.expectedCloseDate).toLocaleDateString() : "—"}
@@ -530,7 +572,7 @@ function DealDetailPage() {
 
       {/* Full width -- this is what the dialog never had room for. */}
       <div className="rounded-xl border border-border-subtle bg-panel p-5">
-        <DealActivityTimeline dealId={id} />
+        <DealActivityTimeline dealId={id} dealContactId={deal.contactId} />
       </div>
     </div>
   );

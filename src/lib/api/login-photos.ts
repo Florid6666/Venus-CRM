@@ -3,12 +3,14 @@ import type { PersonRef } from "./types";
 
 export interface LoginPhoto {
   id: string;
+  type?: "CLOCK_IN" | "CLOCK_OUT" | "LOGIN" | "LOGOUT" | string;
   capturedAt: string;
   user: PersonRef & { department: { id: string; name: string } | null };
 }
 
 export interface LoginPhotoFilters {
   userId?: string;
+  type?: string;
   from?: string;
   to?: string;
 }
@@ -16,6 +18,7 @@ export interface LoginPhotoFilters {
 function buildQuery(filters: LoginPhotoFilters): string {
   const params = new URLSearchParams();
   if (filters.userId) params.set("userId", filters.userId);
+  if (filters.type) params.set("type", filters.type);
   if (filters.from) params.set("from", filters.from);
   if (filters.to) params.set("to", filters.to);
   const qs = params.toString();

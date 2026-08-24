@@ -30,12 +30,13 @@ export class LoginPhotosService {
   ) {}
 
   // No clocked-in gate (unlike ScreenCapture) -- this fires once, right at
-  // login, before any work-session exists yet.
-  async create(user: RequestUser, buffer: Buffer) {
+  // login or clock-in/out.
+  async create(user: RequestUser, buffer: Buffer, type?: string) {
+    const eventType = type === "CLOCK_OUT" || type === "LOGOUT" ? AuthEventType.LOGOUT : AuthEventType.LOGIN;
     const recentLogin = await this.prisma.loginEvent.findFirst({
       where: {
         userId: user.id,
-        type: AuthEventType.LOGIN,
+        type: eventType,
         createdAt: { gte: new Date(Date.now() - LOGIN_EVENT_LINK_WINDOW_MS) },
       },
       orderBy: { createdAt: "desc" },
@@ -44,18 +45,27 @@ export class LoginPhotosService {
 
     const storagePath = await this.storage.save(buffer);
     const photo = await this.prisma.loginPhoto.create({
-      data: { userId: user.id, loginEventId: recentLogin?.id ?? null, storagePath },
+      data: {
+        userId: user.id,
+        loginEventId: recentLogin?.id ?? null,
+        type: type ?? "CLOCK_IN",
+        storagePath,
+      },
     });
 
     if (Math.random() < 0.05) {
       await this.sweepExpired();
     }
 
-    return { id: photo.id, capturedAt: photo.capturedAt };
+    return { id: photo.id, type: photo.type, capturedAt: photo.capturedAt };
   }
 
-  async list(viewer: RequestUser, filters: { userId?: string; from?: string; to?: string }) {
+  async list(
+    viewer: RequestUser,
+    filters: { userId?: string; type?: string; from?: string; to?: string },
+  ) {
     const capturedAt = this.dateFilter(filters);
+    const typeFilter = filters.type ? { type: filters.type } : {};
 
     if (filters.userId) {
       const target = await this.getTargetOrThrow(filters.userId);
@@ -63,10 +73,14 @@ export class LoginPhotosService {
         throw new ForbiddenException("You do not have permission to view this user's login photos");
       }
       return this.prisma.loginPhoto.findMany({
-        where: { userId: filters.userId, ...(capturedAt ? { capturedAt } : {}) },
+        where: {
+          userId: filters.userId,
+          ...typeFilter,
+          ...(capturedAt ? { capturedAt } : {}),
+        },
         orderBy: { capturedAt: "desc" },
         take: 200,
-        select: { id: true, capturedAt: true, user: { select: photoUserSelect } },
+        select: { id: true, type: true, capturedAt: true, user: { select: photoUserSelect } },
       });
     }
 
@@ -79,10 +93,14 @@ export class LoginPhotosService {
 
     const scope = isAdmin || isHR ? {} : { user: { departmentId: viewer.department?.id } };
     return this.prisma.loginPhoto.findMany({
-      where: { ...scope, ...(capturedAt ? { capturedAt } : {}) },
+      where: {
+        ...scope,
+        ...typeFilter,
+        ...(capturedAt ? { capturedAt } : {}),
+      },
       orderBy: { capturedAt: "desc" },
       take: 200,
-      select: { id: true, capturedAt: true, user: { select: photoUserSelect } },
+      select: { id: true, type: true, capturedAt: true, user: { select: photoUserSelect } },
     });
   }
 

@@ -1,4 +1,13 @@
-import { IsBoolean, IsEmail, IsInt, IsOptional, IsString, Max, Min, MinLength } from "class-validator";
+import {
+  IsBoolean,
+  IsEmail,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+  MinLength,
+} from "class-validator";
 
 export class ConnectEmailDto {
   @IsString()

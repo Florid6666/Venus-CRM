@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { EnrollmentStatus, RoleName, SendStatus } from "@prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
 import { CreateSequenceDto } from "./dto/create-sequence.dto";
@@ -104,7 +109,12 @@ export class SequencesService {
     });
   }
 
-  async updateStep(sequenceId: string, stepId: string, dto: UpdateSequenceStepDto, user: RequestUser) {
+  async updateStep(
+    sequenceId: string,
+    stepId: string,
+    dto: UpdateSequenceStepDto,
+    user: RequestUser,
+  ) {
     this.assertCanUse(user);
     await this.getOwnedSequence(sequenceId);
     await this.getOwnedStep(sequenceId, stepId);
@@ -176,10 +186,17 @@ export class SequencesService {
     return results;
   }
 
-  async stopEnrollment(sequenceId: string, enrollmentId: string, reason: string | undefined, user: RequestUser) {
+  async stopEnrollment(
+    sequenceId: string,
+    enrollmentId: string,
+    reason: string | undefined,
+    user: RequestUser,
+  ) {
     this.assertCanUse(user);
     await this.getOwnedSequence(sequenceId);
-    const enrollment = await this.prisma.sequenceEnrollment.findUnique({ where: { id: enrollmentId } });
+    const enrollment = await this.prisma.sequenceEnrollment.findUnique({
+      where: { id: enrollmentId },
+    });
     if (!enrollment || enrollment.sequenceId !== sequenceId) {
       throw new NotFoundException("Enrollment not found");
     }
@@ -224,6 +241,7 @@ export class SequencesService {
         status: SendStatus.SENT,
         openCount: 0,
         sentAt: { lte: coldDate },
+        dismissedAt: null,
         enrollment: user.role.name === RoleName.EMPLOYEE ? { enrolledById: user.id } : undefined,
       },
       include: {
@@ -237,6 +255,26 @@ export class SequencesService {
         },
       },
       orderBy: { sentAt: "desc" },
+    });
+  }
+
+  // Mirrors BulkEmailService.dismissFollowUp -- same "handled it some other
+  // way" escape hatch, same visibility-matched permission check.
+  async dismissFollowUp(id: string, user: RequestUser): Promise<void> {
+    this.assertCanUse(user);
+    const send = await this.prisma.sequenceSend.findUnique({
+      where: { id },
+      select: { enrollment: { select: { enrolledById: true } } },
+    });
+    if (!send) {
+      throw new NotFoundException("Follow-up not found");
+    }
+    if (user.role.name === RoleName.EMPLOYEE && send.enrollment.enrolledById !== user.id) {
+      throw new ForbiddenException("You can only dismiss your own follow-ups");
+    }
+    await this.prisma.sequenceSend.update({
+      where: { id },
+      data: { dismissedAt: new Date() },
     });
   }
 

@@ -37,3 +37,7 @@ export function createBulkEmailCampaign(input: CreateBulkEmailInput) {
 export function runBulkEmailEngine() {
   return apiFetch<{ processed: number }>("/bulk-email/engine/run", { method: "POST" });
 }
+
+export function dismissBulkEmailFollowUp(recipientId: string) {
+  return apiFetch<void>(`/bulk-email/follow-ups/${recipientId}/dismiss`, { method: "PATCH" });
+}

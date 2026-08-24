@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
-import { useFollowUps } from "@/hooks/use-bulk-email";
-import { useSequenceFollowUps } from "@/hooks/use-sequences";
-import { ArrowUpRight, CheckCircle2, Circle, MessageCircle } from "lucide-react";
+import { useFollowUps, useDismissFollowUp } from "@/hooks/use-bulk-email";
+import { useSequenceFollowUps, useDismissSequenceFollowUp } from "@/hooks/use-sequences";
+import { useDealFollowUps, useUpdateDeal } from "@/hooks/use-deals";
+import { ArrowUpRight, CheckCircle2, Circle, MessageCircle, X } from "lucide-react";
 import { useSalesStats } from "@/hooks/use-dashboard";
 import { DEAL_STAGE_LABELS } from "@/lib/api/types";
 import { useAuthStore } from "@/stores/auth-store";
@@ -72,14 +73,18 @@ function Dashboard() {
 
   const wonThisMonth = salesStats?.wonThisMonth;
   const winRateLabel =
-    salesStats?.winRateThisMonth != null ? `${Math.round(salesStats.winRateThisMonth)}% win rate` : "—";
+    salesStats?.winRateThisMonth != null
+      ? `${Math.round(salesStats.winRateThisMonth)}% win rate`
+      : "—";
 
   const revenueByMonth = salesStats?.revenueByMonth ?? [];
   const maxMonthValue = Math.max(1, ...revenueByMonth.map((m) => m.value));
   const lastTwoMonths = revenueByMonth.slice(-2);
   const monthOverMonthDelta =
     lastTwoMonths.length === 2 && lastTwoMonths[0].value > 0
-      ? Math.round(((lastTwoMonths[1].value - lastTwoMonths[0].value) / lastTwoMonths[0].value) * 100)
+      ? Math.round(
+          ((lastTwoMonths[1].value - lastTwoMonths[0].value) / lastTwoMonths[0].value) * 100,
+        )
       : null;
 
   const avgKeywordRank = useMemo(() => {
@@ -93,7 +98,7 @@ function Dashboard() {
     return [...audits].sort((a, b) => new Date(b.runAt).getTime() - new Date(a.runAt).getTime())[0];
   }, [audits]);
 
-  const activeBacklinkCount = backlinks?.filter((b) => b.status === "VERIFIED").length ?? 0;
+  const verifiedBacklinkCount = backlinks?.filter((b) => b.status === "VERIFIED").length ?? 0;
 
   const maxStageCount = useMemo(() => {
     if (!recruitmentSummary) return 1;
@@ -110,7 +115,9 @@ function Dashboard() {
           </h1>
           <p className="text-sm text-text-dim mt-1">
             {appSettings?.heroTagline || "Welcome back to Venus CRM."}
-            {showDev && activeSprint && ` · Active Sprint '${activeSprint.name}' closes in ${remainingDays} days.`}
+            {showDev &&
+              activeSprint &&
+              ` · Active Sprint '${activeSprint.name}' closes in ${remainingDays} days.`}
             {showDev && !activeSprint && " · No active sprint currently."}
           </p>
         </div>
@@ -128,7 +135,11 @@ function Dashboard() {
             <KpiCard
               label="Monthly Revenue"
               value={wonThisMonth ? `$${wonThisMonth.value.toLocaleString()}` : "—"}
-              delta={wonThisMonth ? `${wonThisMonth.count} deal${wonThisMonth.count === 1 ? "" : "s"}` : "—"}
+              delta={
+                wonThisMonth
+                  ? `${wonThisMonth.count} deal${wonThisMonth.count === 1 ? "" : "s"}`
+                  : "—"
+              }
               tone="primary"
             />
             <KpiCard
@@ -178,11 +189,18 @@ function Dashboard() {
         )}
         {showSeo && (
           <>
-            <KpiCard label="Tracked Keywords" value={keywords ? String(keywords.length) : "—"} delta={avgKeywordRank ? `avg rank ${avgKeywordRank}` : "—"} tone="violet" />
+            <KpiCard
+              label="Tracked Keywords"
+              value={keywords ? String(keywords.length) : "—"}
+              delta={avgKeywordRank ? `avg rank ${avgKeywordRank}` : "—"}
+              tone="violet"
+            />
             <KpiCard
               label="Latest Audit Score"
               value={latestAudit ? String(latestAudit.score) : "—"}
-              delta={latestAudit ? new Date(latestAudit.runAt).toLocaleDateString() : "No audits yet"}
+              delta={
+                latestAudit ? new Date(latestAudit.runAt).toLocaleDateString() : "No audits yet"
+              }
               positive={!!latestAudit && latestAudit.score >= 80}
               tone="info"
             />
@@ -225,7 +243,9 @@ function Dashboard() {
                         ) : (
                           <Circle className="size-3.5 text-text-dim group-hover:text-primary transition-colors shrink-0" />
                         )}
-                        <span className={`text-[10px] font-mono ${statusTones[t.status] ?? "text-text-dim"}`}>
+                        <span
+                          className={`text-[10px] font-mono ${statusTones[t.status] ?? "text-text-dim"}`}
+                        >
                           DEV-{String(idx + 1).padStart(3, "0")}
                         </span>
                         <span className="text-sm flex-1 truncate">{t.title}</span>
@@ -239,8 +259,13 @@ function Dashboard() {
               </>
             ) : (
               <>
-                <CardHeader title="No Active Sprint" subtitle="Create a sprint in Dev Sprints to see tasks here." />
-                <p className="text-sm text-text-dim">Head over to Dev Sprints to create and activate a sprint.</p>
+                <CardHeader
+                  title="No Active Sprint"
+                  subtitle="Create a sprint in Dev Sprints to see tasks here."
+                />
+                <p className="text-sm text-text-dim">
+                  Head over to Dev Sprints to create and activate a sprint.
+                </p>
               </>
             )}
           </Card>
@@ -265,7 +290,10 @@ function Dashboard() {
                         <span className="text-text-dim">{count}</span>
                       </div>
                       <div className="h-1.5 w-full bg-panel-elevated rounded-full overflow-hidden">
-                        <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%` }} />
+                        <div
+                          className="h-full bg-primary rounded-full"
+                          style={{ width: `${pct}%` }}
+                        />
                       </div>
                     </div>
                   );
@@ -287,7 +315,9 @@ function Dashboard() {
                       monthOverMonthDelta >= 0 ? "text-success" : "text-destructive"
                     }`}
                   >
-                    <ArrowUpRight className={`size-3 ${monthOverMonthDelta < 0 ? "rotate-90" : ""}`} />
+                    <ArrowUpRight
+                      className={`size-3 ${monthOverMonthDelta < 0 ? "rotate-90" : ""}`}
+                    />
                     {monthOverMonthDelta >= 0 ? "+" : ""}
                     {monthOverMonthDelta}%
                   </span>
@@ -312,8 +342,8 @@ function Dashboard() {
         <Card className="col-span-12 md:col-span-6 lg:col-span-5 p-0 overflow-hidden">
           <div className="px-5 py-3 border-b border-border-subtle flex items-center justify-between bg-canvas/40">
             <span className="text-xs font-semibold flex items-center gap-2">
-              <MessageCircle className="size-3.5 text-primary" />
-              #{generalChannel?.name ?? "general"}
+              <MessageCircle className="size-3.5 text-primary" />#
+              {generalChannel?.name ?? "general"}
             </span>
             <span className="text-[10px] text-text-dim uppercase tracking-wider">
               {chatMessages?.length ?? 0} messages
@@ -325,13 +355,29 @@ function Dashboard() {
             )}
             {(chatMessages ?? []).slice(-3).map((m, i) => {
               const name = m.sender ? `${m.sender.firstName} ${m.sender.lastName}` : "Unknown";
-              const initials = name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase();
-              const time = new Date(m.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-              const bgColors = ["bg-orange-500/80", "bg-blue-500/80", "bg-violet/80", "bg-emerald-500/80", "bg-rose-500/80"];
+              const initials = name
+                .split(" ")
+                .map((n: string) => n[0])
+                .join("")
+                .slice(0, 2)
+                .toUpperCase();
+              const time = new Date(m.createdAt).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              });
+              const bgColors = [
+                "bg-orange-500/80",
+                "bg-blue-500/80",
+                "bg-violet/80",
+                "bg-emerald-500/80",
+                "bg-rose-500/80",
+              ];
               const bg = bgColors[i % bgColors.length];
               return (
                 <div key={m.id} className="flex gap-3">
-                  <div className={`size-8 ${bg} rounded-md flex items-center justify-center text-[10px] font-semibold shrink-0`}>
+                  <div
+                    className={`size-8 ${bg} rounded-md flex items-center justify-center text-[10px] font-semibold shrink-0`}
+                  >
                     {initials}
                   </div>
                   <div className="min-w-0">
@@ -378,9 +424,7 @@ function Dashboard() {
         )}
 
         {/* Follow-Up Reminders */}
-        {showSales && (
-          <FollowUpsCard />
-        )}
+        {showSales && <FollowUpsCard />}
 
         {/* SEO Snapshot -- real keyword/audit/backlink data */}
         {showSeo && (
@@ -388,8 +432,11 @@ function Dashboard() {
             <CardHeader title="SEO Snapshot" subtitle="Live keyword, audit, and backlink data" />
             <div className="grid grid-cols-2 gap-4 mt-1">
               <MiniStat label="Tracked keywords" value={keywords ? String(keywords.length) : "—"} />
-              <MiniStat label="Avg keyword rank" value={avgKeywordRank != null ? String(avgKeywordRank) : "—"} />
-              <MiniStat label="Active backlinks" value={String(activeBacklinkCount)} />
+              <MiniStat
+                label="Avg keyword rank"
+                value={avgKeywordRank != null ? String(avgKeywordRank) : "—"}
+              />
+              <MiniStat label="Verified backlinks" value={String(verifiedBacklinkCount)} />
               <MiniStat
                 label="Latest audit score"
                 value={latestAudit ? `${latestAudit.score}/100` : "No audits"}
@@ -405,9 +452,7 @@ function Dashboard() {
 
 function Card({ className = "", children }: { className?: string; children: React.ReactNode }) {
   return (
-    <div
-      className={`bg-panel border border-border-subtle rounded-xl p-5 ${className}`}
-    >
+    <div className={`bg-panel border border-border-subtle rounded-xl p-5 ${className}`}>
       {children}
     </div>
   );
@@ -454,18 +499,10 @@ function KpiCard({
   } as const;
   return (
     <div className="col-span-6 md:col-span-3 bg-panel border border-border-subtle rounded-xl p-4">
-      <p className="text-[10px] font-medium uppercase tracking-widest text-text-dim">
-        {label}
-      </p>
+      <p className="text-[10px] font-medium uppercase tracking-widest text-text-dim">{label}</p>
       <div className="flex items-baseline gap-2 mt-2">
-        <span className="text-2xl font-semibold tracking-tight tabular-nums">
-          {value}
-        </span>
-        <span
-          className={`text-[11px] font-mono ${
-            positive ? "text-success" : toneMap[tone]
-          }`}
-        >
+        <span className="text-2xl font-semibold tracking-tight tabular-nums">{value}</span>
+        <span className={`text-[11px] font-mono ${positive ? "text-success" : toneMap[tone]}`}>
           {delta}
         </span>
       </div>
@@ -485,83 +522,153 @@ function MiniStat({
   return (
     <div>
       <p className="text-[10px] uppercase tracking-widest text-text-dim">{label}</p>
-      <p className={`text-lg font-semibold tabular-nums mt-0.5 ${positive ? "text-success" : ""}`}>{value}</p>
+      <p className={`text-lg font-semibold tabular-nums mt-0.5 ${positive ? "text-success" : ""}`}>
+        {value}
+      </p>
     </div>
   );
 }
 
 interface FollowUpItem {
   id: string;
+  // Raw (unprefixed) row id + which channel it came from -- what the dismiss
+  // mutation needs, since bulk email, sequences, and deals are dismissed
+  // through three different endpoints.
+  rawId: string;
+  channel: "bulk" | "sequence" | "deal";
   name: string;
   channelLabel: string;
   subLabel: string;
   sentAt: string | null;
+  // Where "Contact" should link to -- deals have their own detail page,
+  // bulk/sequence rows don't, so they fall back to the CRM board.
+  link: string;
 }
 
-// Combines both outreach channels into one list so a lead going cold in a
-// Sequence isn't invisible here just because it isn't a Bulk Email --
-// each channel's own "cold" definition lives server-side (see
-// common/utils/follow-up.ts) and stays identical across both.
+// Combines all three follow-up sources into one list: two outreach channels
+// (a lead going cold in a Sequence isn't invisible here just because it
+// isn't a Bulk Email -- each channel's own "cold" definition lives
+// server-side, see common/utils/follow-up.ts, and stays identical across
+// both) plus Deal.followUpAt, a rep-set reminder date that's a distinct
+// concept from "unopened outreach email" but shares the same dashboard slot.
 function useAllFollowUps() {
   const { data: bulk, isLoading: bulkLoading } = useFollowUps();
   const { data: sequence, isLoading: sequenceLoading } = useSequenceFollowUps();
+  const { data: deals, isLoading: dealsLoading } = useDealFollowUps();
 
   const items = useMemo<FollowUpItem[]>(() => {
     const bulkItems: FollowUpItem[] = (bulk ?? []).map((f) => ({
       id: `bulk-${f.id}`,
+      rawId: f.id,
+      channel: "bulk",
       name: f.contact ? `${f.contact.firstName} ${f.contact.lastName}` : f.email,
       channelLabel: "Bulk Email",
       subLabel: f.campaign?.name ?? "Campaign",
       sentAt: f.sentAt,
+      link: "/crm",
     }));
     const sequenceItems: FollowUpItem[] = (sequence ?? []).map((s) => ({
       id: `seq-${s.id}`,
+      rawId: s.id,
+      channel: "sequence",
       name: `${s.enrollment.contact.firstName} ${s.enrollment.contact.lastName}`,
       channelLabel: "Sequence",
       subLabel: s.enrollment.sequence.name,
       sentAt: s.sentAt,
+      link: "/crm",
     }));
-    return [...bulkItems, ...sequenceItems].sort((a, b) => {
+    const dealItems: FollowUpItem[] = (deals ?? []).map((d) => ({
+      id: `deal-${d.id}`,
+      rawId: d.id,
+      channel: "deal",
+      name: d.title,
+      channelLabel: "Deal",
+      subLabel: d.owner ? `${d.owner.firstName} ${d.owner.lastName}` : DEAL_STAGE_LABELS[d.stage],
+      sentAt: d.followUpAt,
+      link: `/deals/${d.id}`,
+    }));
+    return [...bulkItems, ...sequenceItems, ...dealItems].sort((a, b) => {
       if (!a.sentAt) return 1;
       if (!b.sentAt) return -1;
       return new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime();
     });
-  }, [bulk, sequence]);
+  }, [bulk, sequence, deals]);
 
-  return { items, isLoading: bulkLoading || sequenceLoading };
+  return { items, isLoading: bulkLoading || sequenceLoading || dealsLoading };
 }
 
 function FollowUpsCard() {
   const { items, isLoading } = useAllFollowUps();
+  const dismissBulk = useDismissFollowUp();
+  const dismissSequence = useDismissSequenceFollowUp();
+  const clearDealFollowUp = useUpdateDeal();
+
+  // A rep who already followed up some other way (a call, in person) clears
+  // it here rather than it nagging forever waiting for an email open that
+  // will never come -- see server/src/modules/bulk-email/bulk-email.service.ts
+  // dismissFollowUp. For a Deal, "dismiss" means clearing followUpAt itself
+  // (there's no separate dismissedAt marker -- see DealsService.update).
+  function handleDismiss(item: FollowUpItem) {
+    if (item.channel === "bulk") {
+      dismissBulk.mutate(item.rawId);
+    } else if (item.channel === "sequence") {
+      dismissSequence.mutate(item.rawId);
+    } else {
+      clearDealFollowUp.mutate({ id: item.rawId, input: { followUpAt: null } });
+    }
+  }
 
   return (
     <Card className="col-span-12 md:col-span-6 lg:col-span-5">
       <CardHeader
         title="Follow-Up Reminders"
-        subtitle="Unopened emails sent 3+ days ago, across Bulk Email and Sequences"
+        subtitle="Unopened emails 3+ days ago (Bulk Email, Sequences) and deal reminders you've set"
       />
       <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1">
         {isLoading && <p className="text-xs text-text-dim">Loading follow-ups...</p>}
         {!isLoading && items.length === 0 && (
           <p className="text-xs text-text-dim">No pending follow-ups. Good job!</p>
         )}
-        {!isLoading && items.map((item) => (
-          <div key={item.id} className="flex items-center justify-between border-b border-border-subtle pb-2 last:border-0 last:pb-0">
-            <div className="min-w-0">
-              <p className="text-xs font-medium truncate">{item.name}</p>
-              <p className="text-[10px] text-text-dim truncate">
-                {item.channelLabel} · {item.subLabel} ·{" "}
-                {item.sentAt ? new Date(item.sentAt).toLocaleDateString() : ""}
-              </p>
-            </div>
-            <Link
-              to="/crm"
-              className="text-[10px] font-medium text-primary hover:underline shrink-0"
-            >
-              Contact
-            </Link>
-          </div>
-        ))}
+        {!isLoading &&
+          items.map((item) => {
+            const dismissing =
+              item.channel === "bulk"
+                ? dismissBulk.isPending && dismissBulk.variables === item.rawId
+                : item.channel === "sequence"
+                  ? dismissSequence.isPending && dismissSequence.variables === item.rawId
+                  : clearDealFollowUp.isPending && clearDealFollowUp.variables?.id === item.rawId;
+            return (
+              <div
+                key={item.id}
+                className="flex items-center justify-between gap-2 border-b border-border-subtle pb-2 last:border-0 last:pb-0"
+              >
+                <div className="min-w-0">
+                  <p className="text-xs font-medium truncate">{item.name}</p>
+                  <p className="text-[10px] text-text-dim truncate">
+                    {item.channelLabel} · {item.subLabel} ·{" "}
+                    {item.sentAt ? new Date(item.sentAt).toLocaleDateString() : ""}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Link
+                    to={item.link}
+                    className="text-[10px] font-medium text-primary hover:underline"
+                  >
+                    {item.channel === "deal" ? "Open" : "Contact"}
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => handleDismiss(item)}
+                    disabled={dismissing}
+                    title="I already followed up -- remove this reminder"
+                    className="text-text-dim hover:text-foreground disabled:opacity-50"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
       </div>
     </Card>
   );

@@ -6,6 +6,10 @@ export class CreateSeoKeywordDto {
   term!: string;
 
   @IsOptional()
+  @IsString()
+  searchIntent?: string;
+
+  @IsOptional()
   @IsInt()
   @Min(0)
   volume?: number;
@@ -30,6 +34,10 @@ export class CreateSeoKeywordDto {
   @IsOptional()
   @IsUUID()
   projectId?: string;
+
+  @IsOptional()
+  @IsUUID()
+  campaignId?: string;
 
   @IsOptional()
   @IsUUID()

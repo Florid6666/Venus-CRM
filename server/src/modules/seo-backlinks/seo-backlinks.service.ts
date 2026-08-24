@@ -1,5 +1,5 @@
 import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
-import { RoleName } from "@prisma/client";
+import { BacklinkVerificationStatus, RoleName } from "@prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
 import { CreateSeoBacklinkDto } from "./dto/create-seo-backlink.dto";
 import { UpdateSeoBacklinkDto } from "./dto/update-seo-backlink.dto";
@@ -7,6 +7,8 @@ import type { RequestUser } from "../../common/types/request-user.type";
 
 const seoBacklinkInclude = {
   department: { select: { id: true, name: true } },
+  loggedBy: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+  verifiedBy: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
 } as const;
 
 @Injectable()
@@ -27,8 +29,13 @@ export class SeoBacklinksService {
       data: {
         sourceUrl: dto.sourceUrl,
         targetUrl: dto.targetUrl,
+        anchorText: dto.anchorText,
         domainAuthority: dto.domainAuthority,
+        spamScore: dto.spamScore,
+        linkType: dto.linkType,
         status: dto.status,
+        projectId: dto.projectId,
+        loggedById: user.id,
         departmentId,
       },
       include: seoBacklinkInclude,
@@ -49,7 +56,10 @@ export class SeoBacklinksService {
   }
 
   async findOne(id: string, user: RequestUser) {
-    const backlink = await this.prisma.seoBacklink.findUnique({ where: { id }, include: seoBacklinkInclude });
+    const backlink = await this.prisma.seoBacklink.findUnique({
+      where: { id },
+      include: seoBacklinkInclude,
+    });
     if (!backlink) {
       throw new NotFoundException("SEO backlink not found");
     }
@@ -60,7 +70,21 @@ export class SeoBacklinksService {
   async update(id: string, dto: UpdateSeoBacklinkDto, user: RequestUser) {
     const backlink = await this.getOwned(id);
     this.assertCanMutate(backlink, user);
-    return this.prisma.seoBacklink.update({ where: { id }, data: dto, include: seoBacklinkInclude });
+
+    // Verifying/rejecting is itself a review action -- record who did it,
+    // same as the tester-approval pattern on Task.
+    const isVerificationDecision =
+      dto.status === BacklinkVerificationStatus.VERIFIED ||
+      dto.status === BacklinkVerificationStatus.REJECTED;
+
+    return this.prisma.seoBacklink.update({
+      where: { id },
+      data: {
+        ...dto,
+        verifiedById: isVerificationDecision ? user.id : undefined,
+      },
+      include: seoBacklinkInclude,
+    });
   }
 
   async remove(id: string, user: RequestUser): Promise<void> {
@@ -86,7 +110,8 @@ export class SeoBacklinksService {
 
   private assertCanMutate(backlink: { departmentId: string }, user: RequestUser) {
     const isAdmin = user.role.name === RoleName.ADMIN;
-    const isDeptManager = user.role.name === RoleName.MANAGER && backlink.departmentId === user.department?.id;
+    const isDeptManager =
+      user.role.name === RoleName.MANAGER && backlink.departmentId === user.department?.id;
     if (!isAdmin && !isDeptManager) {
       throw new ForbiddenException("Only a Manager or Admin can modify SEO backlinks");
     }

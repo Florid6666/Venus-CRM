@@ -59,16 +59,15 @@ export function useAddBugComment() {
   const invalidate = useInvalidateBugs();
   return useMutation({
     mutationFn: ({ id, content }: { id: string; content: string }) => addBugComment(id, content),
-    onSuccess: (_, variables) => {
-      invalidate();
-    },
+    onSuccess: () => invalidate(),
   });
 }
 
 export function useDeleteBug() {
   const invalidate = useInvalidateBugs();
   return useMutation({
-    mutationFn: ({ id, taskId }: { id: string; taskId?: string }) => deleteBug(id).then(() => taskId),
+    mutationFn: ({ id, taskId }: { id: string; taskId?: string }) =>
+      deleteBug(id).then(() => taskId),
     onSuccess: (taskId) => invalidate(taskId),
   });
 }

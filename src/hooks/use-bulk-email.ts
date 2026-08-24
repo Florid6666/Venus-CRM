@@ -5,6 +5,7 @@ import {
   createBulkEmailCampaign,
   runBulkEmailEngine,
   listFollowUps,
+  dismissBulkEmailFollowUp,
   type CreateBulkEmailInput,
 } from "@/lib/api/bulk-email";
 
@@ -50,5 +51,13 @@ export function useFollowUps() {
   return useQuery({
     queryKey: [...BULK_EMAIL_KEY, "follow-ups"],
     queryFn: listFollowUps,
+  });
+}
+
+export function useDismissFollowUp() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (recipientId: string) => dismissBulkEmailFollowUp(recipientId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [...BULK_EMAIL_KEY, "follow-ups"] }),
   });
 }

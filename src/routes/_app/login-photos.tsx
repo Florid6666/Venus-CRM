@@ -44,7 +44,11 @@ function LoginPhotosPage() {
   );
 
   const [userId, setUserId] = useState<string>(ALL);
-  const { data: photos, isLoading } = useLoginPhotos(userId === ALL ? {} : { userId });
+  const [typeFilter, setTypeFilter] = useState<string>(ALL);
+  const { data: photos, isLoading } = useLoginPhotos({
+    ...(userId === ALL ? {} : { userId }),
+    ...(typeFilter === ALL ? {} : { type: typeFilter }),
+  });
   const [viewing, setViewing] = useState<LoginPhoto | undefined>(undefined);
   const deletePhoto = useDeleteLoginPhoto();
 
@@ -82,6 +86,17 @@ function LoginPhotosPage() {
             ))}
           </SelectContent>
         </Select>
+
+        <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Event type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>All events</SelectItem>
+            <SelectItem value="CLOCK_IN">Clock In (Online)</SelectItem>
+            <SelectItem value="CLOCK_OUT">Clock Out (Offline)</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="bg-panel border border-border-subtle rounded-xl overflow-hidden">
@@ -90,6 +105,7 @@ function LoginPhotosPage() {
             <TableRow>
               <TableHead>Employee</TableHead>
               <TableHead>Department</TableHead>
+              <TableHead>Event</TableHead>
               <TableHead>Captured At</TableHead>
               {isAdminOrHR && <TableHead className="w-10" />}
             </TableRow>
@@ -97,53 +113,69 @@ function LoginPhotosPage() {
           <TableBody>
             {isLoading && (
               <TableRow>
-                <TableCell colSpan={isAdminOrHR ? 4 : 3} className="text-center text-text-dim py-8">
+                <TableCell colSpan={isAdminOrHR ? 5 : 4} className="text-center text-text-dim py-8">
                   Loading…
                 </TableCell>
               </TableRow>
             )}
             {!isLoading && photos?.length === 0 && (
               <TableRow>
-                <TableCell colSpan={isAdminOrHR ? 4 : 3} className="text-center text-text-dim py-8">
+                <TableCell colSpan={isAdminOrHR ? 5 : 4} className="text-center text-text-dim py-8">
                   No login photos match these filters.
                 </TableCell>
               </TableRow>
             )}
-            {photos?.map((photo) => (
-              <TableRow key={photo.id} className="cursor-pointer" onClick={() => setViewing(photo)}>
-                <TableCell className="font-medium">
-                  <div className="flex items-center gap-2">
-                    <Avatar className="size-6">
-                      <AvatarFallback className="text-[10px]">
-                        {photo.user.firstName[0]}
-                        {photo.user.lastName[0]}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span>
-                      {photo.user.firstName} {photo.user.lastName}
-                    </span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-text-dim">{photo.user.department?.name ?? "—"}</TableCell>
-                <TableCell className="text-text-dim">
-                  {new Date(photo.capturedAt).toLocaleString()}
-                </TableCell>
-                {isAdminOrHR && (
-                  <TableCell>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="size-7 text-text-dim hover:text-destructive"
-                      onClick={(e) => handleDelete(e, photo.id)}
-                      disabled={deletePhoto.isPending}
-                      title="Delete this login photo"
-                    >
-                      <Trash2 className="size-3.5" />
-                    </Button>
+            {photos?.map((photo) => {
+              const isClockOut = photo.type === "CLOCK_OUT" || photo.type === "LOGOUT";
+              return (
+                <TableRow key={photo.id} className="cursor-pointer" onClick={() => setViewing(photo)}>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      <Avatar className="size-6">
+                        <AvatarFallback className="text-[10px]">
+                          {photo.user.firstName[0]}
+                          {photo.user.lastName[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span>
+                        {photo.user.firstName} {photo.user.lastName}
+                      </span>
+                    </div>
                   </TableCell>
-                )}
-              </TableRow>
-            ))}
+                  <TableCell className="text-text-dim">{photo.user.department?.name ?? "—"}</TableCell>
+                  <TableCell>
+                    {isClockOut ? (
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-rose-500/10 text-rose-500 border border-rose-500/20">
+                        <span className="size-1.5 rounded-full bg-rose-500 shrink-0" />
+                        Clock Out (Offline)
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                        <span className="size-1.5 rounded-full bg-emerald-500 shrink-0" />
+                        Clock In (Online)
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-text-dim">
+                    {new Date(photo.capturedAt).toLocaleString()}
+                  </TableCell>
+                  {isAdminOrHR && (
+                    <TableCell>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="size-7 text-text-dim hover:text-destructive"
+                        onClick={(e) => handleDelete(e, photo.id)}
+                        disabled={deletePhoto.isPending}
+                        title="Delete this login photo"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </Button>
+                    </TableCell>
+                  )}
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>
@@ -176,13 +208,29 @@ function PhotoViewerDialog({
   deleting: boolean;
 }) {
   const imageUrl = useLoginPhotoImage(photo?.id);
+  const isClockOut = photo?.type === "CLOCK_OUT" || photo?.type === "LOGOUT";
 
   return (
     <Dialog open={!!photo} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>
-            {photo ? `${photo.user.firstName} ${photo.user.lastName} · ${new Date(photo.capturedAt).toLocaleString()}` : ""}
+          <DialogTitle className="flex items-center justify-between gap-2 pr-6">
+            <span>
+              {photo ? `${photo.user.firstName} ${photo.user.lastName} · ${new Date(photo.capturedAt).toLocaleString()}` : ""}
+            </span>
+            {photo && (
+              isClockOut ? (
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-rose-500/10 text-rose-500 border border-rose-500/20 shrink-0">
+                  <span className="size-1.5 rounded-full bg-rose-500 shrink-0" />
+                  Clock Out
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-medium bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 shrink-0">
+                  <span className="size-1.5 rounded-full bg-emerald-500 shrink-0" />
+                  Clock In
+                </span>
+              )
+            )}
           </DialogTitle>
         </DialogHeader>
         {imageUrl ? (

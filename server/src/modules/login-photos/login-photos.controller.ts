@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Delete,
   Get,
@@ -28,21 +29,26 @@ export class LoginPhotosController {
   // as the user taking the action.
   @Post()
   @UseInterceptors(FileInterceptor("file", { limits: { fileSize: MAX_PHOTO_BYTES } }))
-  async create(@UploadedFile() file: Express.Multer.File, @CurrentUser() user: RequestUser) {
+  async create(
+    @UploadedFile() file: Express.Multer.File,
+    @Body("type") type: string | undefined,
+    @CurrentUser() user: RequestUser,
+  ) {
     if (!file) {
       throw new BadRequestException("No file uploaded");
     }
-    return this.service.create(user, file.buffer);
+    return this.service.create(user, file.buffer, type);
   }
 
   @Get()
   list(
     @CurrentUser() user: RequestUser,
     @Query("userId") userId?: string,
+    @Query("type") type?: string,
     @Query("from") from?: string,
     @Query("to") to?: string,
   ) {
-    return this.service.list(user, { userId, from, to });
+    return this.service.list(user, { userId, type, from, to });
   }
 
   @Get(":id/image")

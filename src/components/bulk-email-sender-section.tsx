@@ -16,15 +16,29 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import {
   useConnectEmail,
+  useConnectGoogle,
+  useConnectMicrosoft,
   useDisconnectEmail,
   useEmailConnectionStatus,
   useNetworkDiagnostic,
+  useOAuthProviderAvailability,
   useTestEmailConnection,
 } from "@/hooks/use-email-connections";
 import { ApiError } from "@/lib/api/client";
+
+const CONNECTION_TYPE_LABEL: Record<string, string> = {
+  SMTP: "SMTP",
+  OAUTH_GOOGLE: "Google",
+  OAUTH_MICROSOFT: "Microsoft",
+};
 
 // Common providers' SMTP settings, so connecting isn't a "go look it up
 // yourself" exercise for the two accounts almost everyone actually has.
@@ -64,10 +78,13 @@ function StatusBadge({ connected, verified }: { connected: boolean; verified: bo
 
 export function BulkEmailSenderSection() {
   const { data: status, isLoading } = useEmailConnectionStatus();
+  const { data: oauthAvailability } = useOAuthProviderAvailability();
   const connectEmail = useConnectEmail();
   const testConnection = useTestEmailConnection();
   const disconnectEmail = useDisconnectEmail();
   const networkDiagnostic = useNetworkDiagnostic();
+  const connectGoogle = useConnectGoogle();
+  const connectMicrosoft = useConnectMicrosoft();
 
   const [editing, setEditing] = useState(false);
   const [smtpHost, setSmtpHost] = useState("");
@@ -136,7 +153,11 @@ export function BulkEmailSenderSection() {
   }
 
   async function handleDisconnect() {
-    if (!confirm("Disconnect this email account? Bulk sends and sequences will stop until you reconnect one.")) {
+    if (
+      !confirm(
+        "Disconnect this email account? Bulk sends and sequences will stop until you reconnect one.",
+      )
+    ) {
       return;
     }
     await disconnectEmail.mutateAsync();
@@ -149,7 +170,9 @@ export function BulkEmailSenderSection() {
           <Mail className="size-4 text-text-dim" />
           <h2 className="text-sm font-semibold">Bulk Email Sender</h2>
         </div>
-        {!isLoading && status && <StatusBadge connected={status.connected} verified={status.verified} />}
+        {!isLoading && status && (
+          <StatusBadge connected={status.connected} verified={status.verified} />
+        )}
       </div>
       <p className="text-xs text-text-dim -mt-2">
         Connect your own mailbox so Bulk Email blasts and Sequence steps send from your real
@@ -162,7 +185,55 @@ export function BulkEmailSenderSection() {
         </div>
       )}
 
-      {!isLoading && !editing && status?.connected && (
+      {!isLoading && !editing && status?.connected && status.connectionType !== "SMTP" && (
+        <div className="space-y-3">
+          <div className="grid sm:grid-cols-2 gap-x-6 gap-y-2 text-sm bg-canvas/30 border border-border-subtle rounded-lg p-4">
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-text-dim">Connected via</p>
+              <p className="truncate">
+                {status.connectionType ? CONNECTION_TYPE_LABEL[status.connectionType] : "—"}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-text-dim">Mailbox</p>
+              <p className="truncate">{status.providerAccountEmail ?? status.fromEmail}</p>
+            </div>
+            <div>
+              <p className="text-[10px] uppercase tracking-wide text-text-dim">Last verified</p>
+              <p className="truncate">
+                {status.lastVerifiedAt ? new Date(status.lastVerifiedAt).toLocaleString() : "Never"}
+              </p>
+            </div>
+          </div>
+          {!status.verified && status.lastError && (
+            <p className="text-xs text-destructive">{status.lastError}</p>
+          )}
+          <p className="text-xs text-text-dim">
+            Sent and received mail from this mailbox syncs into the CRM automatically -- see the{" "}
+            <a href="/inbox" className="text-primary hover:underline">
+              Inbox
+            </a>
+            .
+          </p>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="text-destructive hover:text-destructive gap-1.5"
+            onClick={handleDisconnect}
+            disabled={disconnectEmail.isPending}
+          >
+            {disconnectEmail.isPending ? (
+              <Loader2 className="size-3.5 animate-spin" />
+            ) : (
+              <Trash2 className="size-3.5" />
+            )}
+            Disconnect
+          </Button>
+        </div>
+      )}
+
+      {!isLoading && !editing && status?.connected && status.connectionType === "SMTP" && (
         <div className="space-y-3">
           <div className="grid sm:grid-cols-2 gap-x-6 gap-y-2 text-sm bg-canvas/30 border border-border-subtle rounded-lg p-4">
             <div>
@@ -209,7 +280,13 @@ export function BulkEmailSenderSection() {
               )}
               Test connection
             </Button>
-            <Button type="button" size="sm" variant="outline" onClick={openForm} className="gap-1.5">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={openForm}
+              className="gap-1.5"
+            >
               <Pencil className="size-3.5" />
               Edit
             </Button>
@@ -234,18 +311,75 @@ export function BulkEmailSenderSection() {
 
       {!isLoading && !editing && !status?.connected && (
         <div className="space-y-3">
+          <div className="grid sm:grid-cols-2 gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="gap-2 justify-center"
+              disabled={!oauthAvailability?.google || connectGoogle.isPending}
+              onClick={() => connectGoogle.mutate()}
+              title={
+                oauthAvailability && !oauthAvailability.google
+                  ? "Google connect isn't configured on this server yet"
+                  : undefined
+              }
+            >
+              {connectGoogle.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Mail className="size-4" />
+              )}
+              Connect with Google
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="gap-2 justify-center"
+              disabled={!oauthAvailability?.microsoft || connectMicrosoft.isPending}
+              onClick={() => connectMicrosoft.mutate()}
+              title={
+                oauthAvailability && !oauthAvailability.microsoft
+                  ? "Microsoft connect isn't configured on this server yet"
+                  : undefined
+              }
+            >
+              {connectMicrosoft.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Mail className="size-4" />
+              )}
+              Connect with Outlook
+            </Button>
+          </div>
+          <p className="text-[11px] text-text-dim">
+            Recommended -- also syncs sent and received mail into the CRM, not just outbound
+            sending. Nothing else to set up beyond signing in.
+          </p>
+
+          <div className="flex items-center gap-3 py-1">
+            <div className="h-px flex-1 bg-border-subtle" />
+            <span className="text-[10px] uppercase tracking-wide text-text-dim">or</span>
+            <div className="h-px flex-1 bg-border-subtle" />
+          </div>
+
           <div className="flex items-center justify-between gap-3 bg-canvas/30 border border-border-subtle rounded-lg p-4">
             <p className="text-sm text-text-dim">
               {status?.httpFallbackAvailable
-                ? "No mailbox connected yet -- sends will use a shared address for now, with replies routed back to you. Connect your own mailbox to send as yourself instead."
-                : "No email connected yet. Bulk campaigns and sequences can't send until you connect one."}
+                ? "No mailbox connected yet -- sends will use a shared address for now, with replies routed back to you."
+                : "No email connected yet. Bulk campaigns and sequences can't send until you connect one."}{" "}
+              Connect via SMTP app password instead (sending only, no inbox sync).
             </p>
-            <Button type="button" size="sm" onClick={openForm} className="gap-1.5 shrink-0">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={openForm}
+              className="gap-1.5 shrink-0"
+            >
               <Send className="size-3.5" />
-              Connect email
+              Connect via SMTP
             </Button>
           </div>
-          <ConnectHelp />
         </div>
       )}
 
@@ -319,14 +453,18 @@ export function BulkEmailSenderSection() {
               required={!status?.connected}
             />
             <p className="text-[11px] text-text-dim">
-              Gmail and Outlook require an app password, not your normal login password, when
-              2-step verification is on.
+              Gmail and Outlook require an app password, not your normal login password, when 2-step
+              verification is on.
             </p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
               <Label htmlFor="smtp-from-name">From name (optional)</Label>
-              <Input id="smtp-from-name" value={fromName} onChange={(e) => setFromName(e.target.value)} />
+              <Input
+                id="smtp-from-name"
+                value={fromName}
+                onChange={(e) => setFromName(e.target.value)}
+              />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="smtp-from-email">From email</Label>
@@ -345,7 +483,11 @@ export function BulkEmailSenderSection() {
 
           <div className="flex items-center gap-2">
             <Button type="submit" disabled={connectEmail.isPending} className="gap-1.5">
-              {connectEmail.isPending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+              {connectEmail.isPending ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Send className="size-4" />
+              )}
               {connectEmail.isPending ? "Verifying…" : "Connect & verify"}
             </Button>
             <Button type="button" variant="outline" onClick={() => setEditing(false)}>
@@ -398,7 +540,7 @@ function NetworkDiagnosticPanel({
                 )}
                 {r.label}
               </span>
-              <span className="text-text-dim">{r.ok ? `${r.ms}ms` : r.error ?? "failed"}</span>
+              <span className="text-text-dim">{r.ok ? `${r.ms}ms` : (r.error ?? "failed")}</span>
             </div>
           ))}
           <p className="text-[11px] text-text-dim pt-1">
@@ -430,32 +572,38 @@ function ConnectHelp() {
           </AccordionTrigger>
           <AccordionContent>
             <p className="text-xs text-text-dim mb-3">
-              You'll need a special <span className="font-medium text-foreground">app password</span> --
-              a one-time code your email provider generates just for this, separate from the
-              password you normally sign in with. Your regular password won't work here and
-              Google/Microsoft will reject it.
+              You'll need a special{" "}
+              <span className="font-medium text-foreground">app password</span> -- a one-time code
+              your email provider generates just for this, separate from the password you normally
+              sign in with. Your regular password won't work here and Google/Microsoft will reject
+              it.
             </p>
             <Accordion type="single" collapsible className="space-y-2">
               <AccordionItem value="gmail" className="border border-border-subtle rounded-lg px-3">
-                <AccordionTrigger className="text-xs py-2.5 hover:no-underline">Gmail</AccordionTrigger>
+                <AccordionTrigger className="text-xs py-2.5 hover:no-underline">
+                  Gmail
+                </AccordionTrigger>
                 <AccordionContent>
                   <ol className="list-decimal list-inside space-y-1.5 text-xs text-text-dim">
                     <li>
-                      Go to <span className="font-medium text-foreground">myaccount.google.com</span> and
+                      Go to{" "}
+                      <span className="font-medium text-foreground">myaccount.google.com</span> and
                       sign in.
                     </li>
                     <li>
-                      Click <span className="font-medium text-foreground">Security</span> on the left.
+                      Click <span className="font-medium text-foreground">Security</span> on the
+                      left.
                     </li>
                     <li>
                       Under "How you sign in to Google", turn on{" "}
-                      <span className="font-medium text-foreground">2-Step Verification</span> if it isn't
-                      on already (Google won't let you make an app password without it).
+                      <span className="font-medium text-foreground">2-Step Verification</span> if it
+                      isn't on already (Google won't let you make an app password without it).
                     </li>
                     <li>
                       Go back to <span className="font-medium text-foreground">Security</span>, open{" "}
-                      <span className="font-medium text-foreground">2-Step Verification</span> again, and
-                      scroll down to <span className="font-medium text-foreground">App passwords</span>.
+                      <span className="font-medium text-foreground">2-Step Verification</span>{" "}
+                      again, and scroll down to{" "}
+                      <span className="font-medium text-foreground">App passwords</span>.
                     </li>
                     <li>
                       Type a name like "Venus CRM" and click{" "}
@@ -463,43 +611,54 @@ function ConnectHelp() {
                     </li>
                     <li>Google shows you a 16-letter code in a yellow box. Copy it.</li>
                     <li>
-                      Back here: <span className="font-medium text-foreground">Username</span> is your full
-                      Gmail address, <span className="font-medium text-foreground">Password</span> is that
-                      code you just copied.
+                      Back here: <span className="font-medium text-foreground">Username</span> is
+                      your full Gmail address,{" "}
+                      <span className="font-medium text-foreground">Password</span> is that code you
+                      just copied.
                     </li>
                   </ol>
                 </AccordionContent>
               </AccordionItem>
-              <AccordionItem value="outlook" className="border border-border-subtle rounded-lg px-3">
+              <AccordionItem
+                value="outlook"
+                className="border border-border-subtle rounded-lg px-3"
+              >
                 <AccordionTrigger className="text-xs py-2.5 hover:no-underline">
                   Outlook / Microsoft 365
                 </AccordionTrigger>
                 <AccordionContent>
                   <ol className="list-decimal list-inside space-y-1.5 text-xs text-text-dim">
                     <li>
-                      Go to <span className="font-medium text-foreground">account.microsoft.com</span> and
+                      Go to{" "}
+                      <span className="font-medium text-foreground">account.microsoft.com</span> and
                       sign in.
                     </li>
                     <li>
-                      Click <span className="font-medium text-foreground">Security</span> at the top.
+                      Click <span className="font-medium text-foreground">Security</span> at the
+                      top.
                     </li>
                     <li>
-                      Make sure <span className="font-medium text-foreground">Two-step verification</span> is
+                      Make sure{" "}
+                      <span className="font-medium text-foreground">Two-step verification</span> is
                       turned on.
                     </li>
                     <li>
-                      Click <span className="font-medium text-foreground">Advanced security options</span>.
+                      Click{" "}
+                      <span className="font-medium text-foreground">Advanced security options</span>
+                      .
                     </li>
                     <li>
-                      Under <span className="font-medium text-foreground">App passwords</span>, click{" "}
-                      <span className="font-medium text-foreground">Create a new app password</span>.
+                      Under <span className="font-medium text-foreground">App passwords</span>,
+                      click{" "}
+                      <span className="font-medium text-foreground">Create a new app password</span>
+                      .
                     </li>
                     <li>Microsoft shows you a generated password. Copy it.</li>
                     <li>
-                      Back here: <span className="font-medium text-foreground">Username</span> is your full
-                      Outlook/Microsoft email address,{" "}
-                      <span className="font-medium text-foreground">Password</span> is that code you just
-                      copied.
+                      Back here: <span className="font-medium text-foreground">Username</span> is
+                      your full Outlook/Microsoft email address,{" "}
+                      <span className="font-medium text-foreground">Password</span> is that code you
+                      just copied.
                     </li>
                   </ol>
                 </AccordionContent>
@@ -511,9 +670,12 @@ function ConnectHelp() {
                 <AccordionContent>
                   <p className="text-xs text-text-dim">
                     Ask whoever set up your email (IT, or the provider's support site) for your{" "}
-                    <span className="font-medium text-foreground">SMTP server address and port</span> and
-                    whether an app password is required. If your regular password works, you can use
-                    that instead -- just leave the SMTP host/port fields matching what they gave you.
+                    <span className="font-medium text-foreground">
+                      SMTP server address and port
+                    </span>{" "}
+                    and whether an app password is required. If your regular password works, you can
+                    use that instead -- just leave the SMTP host/port fields matching what they gave
+                    you.
                   </p>
                 </AccordionContent>
               </AccordionItem>

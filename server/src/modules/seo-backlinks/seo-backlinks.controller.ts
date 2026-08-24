@@ -15,7 +15,10 @@ export class SeoBacklinksController {
   }
 
   @Get()
-  findAll(@Query("departmentId") departmentId: string | undefined, @CurrentUser() user: RequestUser) {
+  findAll(
+    @Query("departmentId") departmentId: string | undefined,
+    @CurrentUser() user: RequestUser,
+  ) {
     return this.seoBacklinksService.findAll(departmentId, user);
   }
 
@@ -25,7 +28,11 @@ export class SeoBacklinksController {
   }
 
   @Patch(":id")
-  update(@Param("id") id: string, @Body() dto: UpdateSeoBacklinkDto, @CurrentUser() user: RequestUser) {
+  update(
+    @Param("id") id: string,
+    @Body() dto: UpdateSeoBacklinkDto,
+    @CurrentUser() user: RequestUser,
+  ) {
     return this.seoBacklinksService.update(id, dto, user);
   }
 

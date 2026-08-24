@@ -43,33 +43,13 @@ export class ProjectsService {
   // caller-supplied departmentId narrows further for Admin only -- it must
   // never let a non-Admin see another department's projects.
   private visibilityScope(user: RequestUser, requestedDepartmentId?: string) {
-    if (user.role.name === RoleName.ADMIN || user.role.name === RoleName.MANAGER) {
+    if (user.role.name === RoleName.ADMIN) {
       return requestedDepartmentId ? { departmentId: requestedDepartmentId } : {};
     }
-
-    // EMPLOYEE role strict visibility scope:
-    // Only projects where employee is owner, member, or has tasks assigned
-    return {
-      OR: [
-        { ownerId: user.id },
-        { members: { some: { id: user.id } } },
-        {
-          tasks: {
-            some: {
-              OR: [
-                { assigneeId: user.id },
-                { assignees: { some: { userId: user.id } } },
-                { testerId: user.id },
-                { subtasks: { some: { assigneeId: user.id } } },
-              ],
-            },
-          },
-        },
-      ],
-    };
+    return { OR: [{ departmentId: null }, { departmentId: user.department?.id }] };
   }
 
-  async findOne(id: string, user?: RequestUser) {
+  async findOne(id: string) {
     const project = await this.prisma.project.findUnique({
       where: { id },
       include: {
@@ -78,11 +58,10 @@ export class ProjectsService {
         tasks: {
           include: {
             assignee: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
-            assignees: { include: { user: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } } } },
-            tester: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
-            subtasks: { select: { id: true, assigneeId: true } },
             taskList: { select: { id: true, name: true } },
             timeLogs: { select: { minutes: true } },
+            // Latest progress note only, so a Kanban card can show "what
+            // happened most recently" at a glance without opening the task.
             updates: {
               take: 1,
               orderBy: { createdAt: "desc" },
@@ -97,42 +76,10 @@ export class ProjectsService {
     if (!project) {
       throw new NotFoundException("Project not found");
     }
-
-    if (user && user.role.name === RoleName.EMPLOYEE) {
-      const isOwner = project.ownerId === user.id;
-      const isMember = project.members.some((m) => m.id === user.id);
-      const hasAssignedTask = project.tasks.some(
-        (t) =>
-          t.assigneeId === user.id ||
-          t.assignees?.some((a) => a.userId === user.id) ||
-          t.testerId === user.id ||
-          t.creatorId === user.id ||
-          t.subtasks?.some((st) => st.assigneeId === user.id)
-      );
-
-      if (!isOwner && !isMember && !hasAssignedTask) {
-        throw new ForbiddenException("You do not have permission to view this project.");
-      }
-
-      // Scoped view: Filter tasks so employee only sees tasks assigned to them / shared with them
-      project.tasks = project.tasks.filter(
-        (t) =>
-          t.assigneeId === user.id ||
-          t.assignees?.some((a) => a.userId === user.id) ||
-          t.testerId === user.id ||
-          t.creatorId === user.id ||
-          t.subtasks?.some((st) => st.assigneeId === user.id)
-      );
-    }
-
     return project;
   }
 
   async create(dto: CreateProjectDto, owner: RequestUser) {
-    if (owner.role.name !== RoleName.ADMIN && owner.role.name !== RoleName.MANAGER) {
-      throw new ForbiddenException("Only managers and admins can create projects");
-    }
-
     const project = await this.prisma.project.create({
       data: {
         name: dto.name,

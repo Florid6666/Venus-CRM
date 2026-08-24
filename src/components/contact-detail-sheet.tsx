@@ -1,4 +1,6 @@
 import {
+  ArrowDownLeft,
+  ArrowUpRight,
   Building2,
   Globe,
   Linkedin,
@@ -11,6 +13,9 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { CallButton } from "@/components/telephony/call-button";
+import { CallHistoryTable } from "@/components/telephony/call-history-table";
+import { useSyncedEmails } from "@/hooks/use-synced-emails";
 import type { Contact } from "@/lib/api/types";
 
 interface ContactDetailSheetProps {
@@ -85,7 +90,8 @@ export function ContactDetailSheet({ contact, onOpenChange, onEdit }: ContactDet
   const sequenceSendCount =
     contact?.sequenceEnrollments?.reduce((sum, e) => sum + (e.sends?.length ?? 0), 0) ?? 0;
   const bulkRecipientCount = contact?.bulkEmailRecipients?.length ?? 0;
-  const hasEmailHistory = bulkRecipientCount > 0 || sequenceSendCount > 0;
+  const { data: syncedEmails } = useSyncedEmails({ contactId: contact?.id }, !!contact?.id);
+  const hasEmailHistory = bulkRecipientCount > 0 || sequenceSendCount > 0 || !!syncedEmails?.length;
 
   return (
     <Sheet open={!!contact} onOpenChange={onOpenChange}>
@@ -104,9 +110,7 @@ export function ContactDetailSheet({ contact, onOpenChange, onEdit }: ContactDet
                   <SheetTitle className="text-left truncate">
                     {contact.firstName} {contact.lastName}
                   </SheetTitle>
-                  {contact.title && (
-                    <p className="text-xs text-text-dim mt-0.5">{contact.title}</p>
-                  )}
+                  {contact.title && <p className="text-xs text-text-dim mt-0.5">{contact.title}</p>}
                   <div className="flex flex-wrap items-center gap-1.5 mt-2">
                     {contact.priority && <PriorityBadge priority={contact.priority} />}
                     {contact.category && (
@@ -131,10 +135,30 @@ export function ContactDetailSheet({ contact, onOpenChange, onEdit }: ContactDet
 
             <div className="mt-6 divide-y divide-border-subtle">
               {contact.email && (
-                <DetailRow icon={Mail} label="Email" value={contact.email} href={`mailto:${contact.email}`} />
+                <DetailRow
+                  icon={Mail}
+                  label="Email"
+                  value={contact.email}
+                  href={`mailto:${contact.email}`}
+                />
               )}
               {contact.phone && (
-                <DetailRow icon={Phone} label="Phone" value={contact.phone} href={`tel:${contact.phone}`} />
+                <div className="flex items-center justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <DetailRow
+                      icon={Phone}
+                      label="Phone"
+                      value={contact.phone}
+                      href={`tel:${contact.phone}`}
+                    />
+                  </div>
+                  <CallButton
+                    toNumber={contact.phone}
+                    displayName={`${contact.firstName} ${contact.lastName}`}
+                    contactId={contact.id}
+                    companyId={contact.company?.id}
+                  />
+                </div>
               )}
               {contact.linkedinUrl && (
                 <DetailRow
@@ -145,22 +169,42 @@ export function ContactDetailSheet({ contact, onOpenChange, onEdit }: ContactDet
                 />
               )}
               {contact.website && (
-                <DetailRow icon={Globe} label="Website" value={contact.website} href={toHref(contact.website)} />
+                <DetailRow
+                  icon={Globe}
+                  label="Website"
+                  value={contact.website}
+                  href={toHref(contact.website)}
+                />
               )}
               {contact.company && (
                 <DetailRow icon={Building2} label="Company" value={contact.company.name} />
               )}
-              {contact.location && <DetailRow icon={MapPin} label="Location" value={contact.location} />}
+              {contact.location && (
+                <DetailRow icon={MapPin} label="Location" value={contact.location} />
+              )}
               {contact.notes && <DetailRow icon={StickyNote} label="Notes" value={contact.notes} />}
+            </div>
+
+            {/* Call History */}
+            <div className="mt-6 pt-4 border-t border-border-subtle">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-text-dim mb-3">
+                Call History
+              </h3>
+              <CallHistoryTable contactId={contact.id} compact />
             </div>
 
             {/* Email History */}
             {hasEmailHistory && (
               <div className="mt-6 pt-4 border-t border-border-subtle">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-text-dim mb-3">Email History</h3>
+                <h3 className="text-xs font-semibold uppercase tracking-wider text-text-dim mb-3">
+                  Email History
+                </h3>
                 <div className="space-y-2">
                   {contact.bulkEmailRecipients?.map((rec) => (
-                    <div key={rec.id} className="text-xs flex items-start justify-between bg-canvas/30 p-2.5 rounded-lg border border-border-subtle">
+                    <div
+                      key={rec.id}
+                      className="text-xs flex items-start justify-between bg-canvas/30 p-2.5 rounded-lg border border-border-subtle"
+                    >
                       <div className="min-w-0 flex-1 pr-2">
                         <p className="font-medium truncate">{rec.campaign?.name ?? "Bulk email"}</p>
                         <p className="text-[10px] text-text-dim mt-0.5">
@@ -186,9 +230,14 @@ export function ContactDetailSheet({ contact, onOpenChange, onEdit }: ContactDet
                   ))}
                   {contact.sequenceEnrollments?.map((enroll) =>
                     enroll.sends?.map((send) => (
-                      <div key={send.id} className="text-xs flex items-start justify-between bg-canvas/30 p-2.5 rounded-lg border border-border-subtle">
+                      <div
+                        key={send.id}
+                        className="text-xs flex items-start justify-between bg-canvas/30 p-2.5 rounded-lg border border-border-subtle"
+                      >
                         <div className="min-w-0 flex-1 pr-2">
-                          <p className="font-medium truncate">Seq: {enroll.sequence?.name ?? "Sequence"}</p>
+                          <p className="font-medium truncate">
+                            Seq: {enroll.sequence?.name ?? "Sequence"}
+                          </p>
                           <p className="text-[10px] text-text-dim mt-0.5">
                             Sent: {new Date(send.sentAt).toLocaleDateString()}
                           </p>
@@ -213,8 +262,28 @@ export function ContactDetailSheet({ contact, onOpenChange, onEdit }: ContactDet
                           )}
                         </div>
                       </div>
-                    ))
+                    )),
                   )}
+                  {syncedEmails?.map((email) => (
+                    <div
+                      key={email.id}
+                      className="text-xs flex items-start justify-between bg-canvas/30 p-2.5 rounded-lg border border-border-subtle"
+                    >
+                      <div className="min-w-0 flex-1 pr-2 flex items-start gap-1.5">
+                        {email.direction === "SENT" ? (
+                          <ArrowUpRight className="size-3 mt-0.5 text-primary shrink-0" />
+                        ) : (
+                          <ArrowDownLeft className="size-3 mt-0.5 text-cyan-400 shrink-0" />
+                        )}
+                        <div className="min-w-0">
+                          <p className="font-medium truncate">{email.subject || "(no subject)"}</p>
+                          <p className="text-[10px] text-text-dim mt-0.5">
+                            {new Date(email.occurredAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

@@ -4,11 +4,16 @@ import Anthropic from "@anthropic-ai/sdk";
 import { PrismaService } from "../../prisma/prisma.service";
 import { CreateSeoContentBriefDto } from "./dto/create-seo-content-brief.dto";
 import { UpdateSeoContentBriefDto } from "./dto/update-seo-content-brief.dto";
+import { CreateContentBriefQaCheckDto } from "./dto/create-content-brief-qa-check.dto";
+import { UpdateContentBriefQaCheckDto } from "./dto/update-content-brief-qa-check.dto";
 import type { RequestUser } from "../../common/types/request-user.type";
 
 const briefInclude = {
   assignee: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
+  reviewer: { select: { id: true, firstName: true, lastName: true, avatarUrl: true } },
   department: { select: { id: true, name: true } },
+  qaChecklist: { orderBy: { createdAt: "asc" as const } },
+  performance: true,
 } as const;
 
 @Injectable()
@@ -31,10 +36,19 @@ export class SeoContentBriefsService {
       data: {
         title: dto.title,
         targetKeyword: dto.targetKeyword,
+        secondaryKeywords: dto.secondaryKeywords,
+        targetWordCount: dto.targetWordCount,
+        outlineJson: dto.outlineJson,
         status: dto.status,
+        slaStatus: dto.slaStatus,
         dueDate: dto.dueDate ? new Date(dto.dueDate) : undefined,
+        publishDate: dto.publishDate ? new Date(dto.publishDate) : undefined,
+        projectId: dto.projectId,
+        campaignId: dto.campaignId,
         assigneeId: dto.assigneeId,
+        reviewerId: dto.reviewerId,
         content: dto.content,
+        rejectionReason: dto.rejectionReason,
         departmentId,
       },
       include: briefInclude,
@@ -55,7 +69,10 @@ export class SeoContentBriefsService {
   }
 
   async findOne(id: string, user: RequestUser) {
-    const brief = await this.prisma.seoContentBrief.findUnique({ where: { id }, include: briefInclude });
+    const brief = await this.prisma.seoContentBrief.findUnique({
+      where: { id },
+      include: briefInclude,
+    });
     if (!brief) {
       throw new NotFoundException("Content brief not found");
     }
@@ -114,10 +131,24 @@ export class SeoContentBriefsService {
       data: {
         title: dto.title,
         targetKeyword: dto.targetKeyword,
+        secondaryKeywords: dto.secondaryKeywords,
+        targetWordCount: dto.targetWordCount,
+        outlineJson: dto.outlineJson,
         status: dto.status,
+        slaStatus: dto.slaStatus,
         dueDate: dto.dueDate === undefined ? undefined : dto.dueDate ? new Date(dto.dueDate) : null,
+        publishDate:
+          dto.publishDate === undefined
+            ? undefined
+            : dto.publishDate
+              ? new Date(dto.publishDate)
+              : null,
+        projectId: dto.projectId,
+        campaignId: dto.campaignId,
         assigneeId: dto.assigneeId,
+        reviewerId: dto.reviewerId,
         content: dto.content,
+        rejectionReason: dto.rejectionReason,
       },
       include: briefInclude,
     });
@@ -127,6 +158,37 @@ export class SeoContentBriefsService {
     const brief = await this.getOwned(id);
     this.assertCanMutate(brief, user);
     await this.prisma.seoContentBrief.delete({ where: { id } });
+  }
+
+  async addQaCheck(briefId: string, dto: CreateContentBriefQaCheckDto, user: RequestUser) {
+    const brief = await this.getOwned(briefId);
+    this.assertCanMutate(brief, user);
+    return this.prisma.contentBriefQaCheck.create({
+      data: { briefId, checkItem: dto.checkItem },
+    });
+  }
+
+  async toggleQaCheck(checkId: string, dto: UpdateContentBriefQaCheckDto, user: RequestUser) {
+    const check = await this.prisma.contentBriefQaCheck.findUnique({ where: { id: checkId } });
+    if (!check) {
+      throw new NotFoundException("QA checklist item not found");
+    }
+    const brief = await this.getOwned(check.briefId);
+    this.assertCanMutate(brief, user);
+    return this.prisma.contentBriefQaCheck.update({
+      where: { id: checkId },
+      data: { isPassed: dto.isPassed, verifiedById: dto.isPassed ? user.id : null },
+    });
+  }
+
+  async removeQaCheck(checkId: string, user: RequestUser): Promise<void> {
+    const check = await this.prisma.contentBriefQaCheck.findUnique({ where: { id: checkId } });
+    if (!check) {
+      throw new NotFoundException("QA checklist item not found");
+    }
+    const brief = await this.getOwned(check.briefId);
+    this.assertCanMutate(brief, user);
+    await this.prisma.contentBriefQaCheck.delete({ where: { id: checkId } });
   }
 
   private async getOwned(id: string) {
@@ -147,12 +209,18 @@ export class SeoContentBriefsService {
   // Wider than the other SEO modules' assertCanMutate: the assignee is the
   // person actually doing the writing, so they can update their own brief
   // (status/content) without needing Manager/Admin sign-off for every edit.
-  private assertCanMutate(brief: { departmentId: string; assigneeId: string | null }, user: RequestUser) {
+  private assertCanMutate(
+    brief: { departmentId: string; assigneeId: string | null },
+    user: RequestUser,
+  ) {
     const isAdmin = user.role.name === RoleName.ADMIN;
     const isAssignee = brief.assigneeId === user.id;
-    const isDeptManager = user.role.name === RoleName.MANAGER && brief.departmentId === user.department?.id;
+    const isDeptManager =
+      user.role.name === RoleName.MANAGER && brief.departmentId === user.department?.id;
     if (!isAdmin && !isAssignee && !isDeptManager) {
-      throw new ForbiddenException("Only the assignee, a Manager, or an Admin can modify this brief");
+      throw new ForbiddenException(
+        "Only the assignee, a Manager, or an Admin can modify this brief",
+      );
     }
   }
 }

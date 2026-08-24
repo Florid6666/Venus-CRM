@@ -15,7 +15,10 @@ export class SeoKeywordsController {
   }
 
   @Get()
-  findAll(@Query("departmentId") departmentId: string | undefined, @CurrentUser() user: RequestUser) {
+  findAll(
+    @Query("departmentId") departmentId: string | undefined,
+    @CurrentUser() user: RequestUser,
+  ) {
     return this.seoKeywordsService.findAll(departmentId, user);
   }
 
@@ -25,7 +28,11 @@ export class SeoKeywordsController {
   }
 
   @Patch(":id")
-  update(@Param("id") id: string, @Body() dto: UpdateSeoKeywordDto, @CurrentUser() user: RequestUser) {
+  update(
+    @Param("id") id: string,
+    @Body() dto: UpdateSeoKeywordDto,
+    @CurrentUser() user: RequestUser,
+  ) {
     return this.seoKeywordsService.update(id, dto, user);
   }
 

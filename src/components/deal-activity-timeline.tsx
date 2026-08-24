@@ -1,5 +1,15 @@
 import { useState } from "react";
-import { Loader2, Phone, StickyNote, Trash2, Users, Info } from "lucide-react";
+import {
+  Loader2,
+  Phone,
+  StickyNote,
+  Trash2,
+  Users,
+  Info,
+  Mail,
+  ArrowDownLeft,
+  ArrowUpRight,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { useActivities, useCreateActivity, useDeleteActivity } from "@/hooks/use-activities";
 import { useContacts } from "@/hooks/use-contacts";
+import { useSyncedEmails } from "@/hooks/use-synced-emails";
 import { useAuthStore } from "@/stores/auth-store";
 import { ACTIVITY_TYPES, ACTIVITY_TYPE_LABELS, type ActivityType } from "@/lib/api/types";
 
@@ -70,12 +81,22 @@ function formatDuration(minutes: number | null): string {
 
 interface DealActivityTimelineProps {
   dealId: string;
+  // SyncedEmail.dealId is deliberately never set by EmailSyncEngineService
+  // (matching an inbound/outbound address to a Contact is reliable; guessing
+  // which of that Contact's several Deals it's "about" isn't) -- so this
+  // component looks up synced mail by the deal's linked Contact instead.
+  // Named distinctly from the "who you spoke to" contactId state below.
+  dealContactId?: string | null;
 }
 
-export function DealActivityTimeline({ dealId }: DealActivityTimelineProps) {
+export function DealActivityTimeline({ dealId, dealContactId }: DealActivityTimelineProps) {
   const currentUser = useAuthStore((s) => s.user);
   const { data: activities, isLoading } = useActivities(dealId);
   const { data: contacts } = useContacts();
+  const { data: syncedEmails } = useSyncedEmails(
+    { contactId: dealContactId ?? undefined },
+    !!dealContactId,
+  );
   const createActivity = useCreateActivity(dealId);
   const deleteActivity = useDeleteActivity(dealId);
 
@@ -232,6 +253,33 @@ export function DealActivityTimeline({ dealId }: DealActivityTimelineProps) {
           </Button>
         </div>
       </div>
+
+      {dealContactId && syncedEmails && syncedEmails.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="text-sm font-medium flex items-center gap-1.5">
+            <Mail className="size-3.5 text-text-dim" />
+            Synced emails with this contact
+          </p>
+          <div className="rounded-lg border border-border-subtle divide-y divide-border-subtle max-h-48 overflow-y-auto">
+            {syncedEmails.map((email) => (
+              <div key={email.id} className="flex items-start gap-2 px-3 py-2">
+                {email.direction === "SENT" ? (
+                  <ArrowUpRight className="size-3.5 mt-0.5 text-primary shrink-0" />
+                ) : (
+                  <ArrowDownLeft className="size-3.5 mt-0.5 text-cyan-400 shrink-0" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium truncate">{email.subject || "(no subject)"}</p>
+                  <p className="text-[11px] text-text-dim truncate">{email.bodyPreview}</p>
+                </div>
+                <span className="text-[10px] text-text-dim whitespace-nowrap shrink-0">
+                  {new Date(email.occurredAt).toLocaleDateString()}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Spreadsheet-style log: fixed header, ruled columns, zebra rows. */}
       <div className="overflow-hidden rounded-lg border border-border-subtle">

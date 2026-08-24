@@ -5,6 +5,7 @@ import { EnrollmentStatus, SendStatus, Prisma } from "@prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
 import { EmailSuppressionService } from "../email-suppression/email-suppression.service";
 import { EmailConnectionsService } from "../email-connections/email-connections.service";
+import { EmailOAuthService } from "../email-oauth/email-oauth.service";
 import { renderMergeFields } from "../../common/utils/merge-fields";
 import { composeEmailHtml } from "../../common/utils/email-body";
 import { buildUnsubscribeUrl } from "../../common/utils/unsubscribe-token";
@@ -35,6 +36,7 @@ export class SequenceEngineService {
     private readonly prisma: PrismaService,
     private readonly suppression: EmailSuppressionService,
     private readonly emailConnections: EmailConnectionsService,
+    private readonly emailOAuth: EmailOAuthService,
     private readonly config: ConfigService,
   ) {}
 
@@ -120,7 +122,9 @@ export class SequenceEngineService {
       step.template.appendSignature ? enrollment.enrolledBy?.emailSignatureHtml : null,
     );
     const appUrl =
-      this.config.get<string>("APP_URL") ?? this.config.get<string>("CORS_ORIGIN") ?? "http://localhost:8080";
+      this.config.get<string>("APP_URL") ??
+      this.config.get<string>("CORS_ORIGIN") ??
+      "http://localhost:8080";
     const unsubscribeUrl = buildUnsubscribeUrl(email, appUrl);
     const sendId = randomUUID();
     const trackingUrl = `${appUrl.replace(/\/$/, "")}/api/tracking/open/sequence/${sendId}`;
@@ -154,6 +158,13 @@ export class SequenceEngineService {
       const sendable = await this.emailConnections.requireSendable(enrollment.enrolledById);
       if (sendable.mode === "smtp") {
         await sendable.transporter.sendMail({ from: sendable.from, to: email, subject, html });
+      } else if (sendable.mode === "oauth") {
+        await this.emailOAuth.sendMail(sendable.provider, sendable.accessToken, {
+          to: email,
+          subject,
+          html,
+          from: sendable.from,
+        });
       } else {
         const result = await sendEmail({ to: email, subject, html, replyTo: sendable.replyTo });
         if (!result.delivered) {
@@ -188,7 +199,10 @@ export class SequenceEngineService {
     if (nextStep) {
       await this.prisma.sequenceEnrollment.update({
         where: { id: enrollment.id },
-        data: { currentStepOrder: nextStep.order, nextSendAt: addDays(new Date(), nextStep.delayDays) },
+        data: {
+          currentStepOrder: nextStep.order,
+          nextSendAt: addDays(new Date(), nextStep.delayDays),
+        },
       });
     } else {
       await this.prisma.sequenceEnrollment.update({

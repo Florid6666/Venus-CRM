@@ -51,12 +51,10 @@ export function TopBar() {
   const setActiveDialog = useSearchStore((s) => s.setActiveDialog);
 
   const isAdmin = user?.role?.name === "ADMIN";
-  const isManager = user?.role?.name === "MANAGER";
   const isHR = user?.department?.name === "HR" || isAdmin;
   const isSales = user?.department?.name === "Sales" || isAdmin;
   const isDev = user?.department?.name === "Dev" || isAdmin;
   const isRecruitment = user?.department?.name === "Recruitment" || isAdmin;
-  const canCreateProject = isDev && (isAdmin || isManager);
 
   const count = unreadCount?.count ?? 0;
 
@@ -182,11 +180,9 @@ export function TopBar() {
             )}
             {isDev && (
               <>
-                {canCreateProject && (
-                  <DropdownMenuItem onClick={() => setActiveDialog("project")}>
-                    New Project
-                  </DropdownMenuItem>
-                )}
+                <DropdownMenuItem onClick={() => setActiveDialog("project")}>
+                  New Project
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setActiveDialog("task")}>
                   New Task
                 </DropdownMenuItem>

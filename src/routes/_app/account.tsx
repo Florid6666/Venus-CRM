@@ -37,9 +37,15 @@ import { LeaveCalendar } from "@/components/leave-calendar";
 import { BulkEmailSenderSection } from "@/components/bulk-email-sender-section";
 import { EmailSignatureEditor } from "@/components/email-signature-editor";
 import { LEAVE_TYPE_LABELS, LEAVE_TYPE_COLORS, LEAVE_STATUS_LABELS } from "@/lib/api/types";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_app/account")({
   component: AccountPage,
+  // Set by EmailOAuthController's callback redirect (a plain top-level
+  // navigation, so this is the only way it can hand back a result).
+  validateSearch: (search: Record<string, unknown>): { emailConnect?: string } => ({
+    emailConnect: typeof search.emailConnect === "string" ? search.emailConnect : undefined,
+  }),
 });
 
 const STATUS_STYLES: Record<string, string> = {
@@ -53,6 +59,18 @@ function AccountPage() {
   const currentUser = useAuthStore((s) => s.user);
   const { data: users } = useUsers();
   const me = useMemo(() => users?.find((u) => u.id === currentUser?.id), [users, currentUser]);
+  const { emailConnect } = Route.useSearch();
+
+  useEffect(() => {
+    if (emailConnect === "success") {
+      toast.success("Mailbox connected -- sent and received mail will start syncing shortly.");
+    } else if (emailConnect === "denied") {
+      toast.error("Mailbox connection was cancelled.");
+    } else if (emailConnect === "error") {
+      toast.error("Couldn't connect that mailbox -- try again.");
+    }
+    // Only meant to fire once per redirect landing, not on every render.
+  }, [emailConnect]);
 
   return (
     <div className="p-6 max-w-[1000px] mx-auto space-y-6">

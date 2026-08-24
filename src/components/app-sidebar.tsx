@@ -21,6 +21,8 @@ import {
   Camera,
   Send,
   GraduationCap,
+  Phone,
+  Mail,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -66,7 +68,9 @@ const groups: Array<{
     items: [
       { to: "/sales", label: "Team Performance", icon: TrendingUp },
       { to: "/outreach", label: "Outreach", icon: Rocket },
+      { to: "/inbox", label: "Inbox", icon: Mail },
       { to: "/bulk-email", label: "Bulk Email", icon: Send },
+      { to: "/calls", label: "Calls", icon: Phone },
       { to: "/recruitment", label: "Recruitment", icon: Briefcase },
       { to: "/seo", label: "SEO Monitor", icon: Search },
       { to: "/dev", label: "Dev Sprints", icon: Code2 },
@@ -102,7 +106,9 @@ const DEPARTMENT_ROUTES: Record<string, string> = {
   "/dev": "Dev",
   "/sales": "Sales",
   "/outreach": "Sales",
+  "/inbox": "Sales",
   "/bulk-email": "Sales",
+  "/calls": "Sales",
 };
 
 const MANAGER_ONLY_ROUTES = new Set(["/sales"]);
@@ -191,8 +197,7 @@ export function AppSidebar() {
             </div>
             <div className="space-y-0.5">
               {g.items.map((item) => {
-                const active =
-                  item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
+                const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
                 const Icon = item.icon;
                 return (
                   <Link
@@ -222,7 +227,7 @@ export function AppSidebar() {
 
       <div className="p-3 border-t border-border-subtle space-y-3">
         <WorkSessionToggle />
-        <button 
+        <button
           onClick={() => setSearchOpen(true)}
           className="w-full flex items-center gap-2 rounded-md bg-panel-elevated/60 hover:bg-panel-elevated border border-border-subtle px-2.5 py-2 text-left transition-colors"
         >
@@ -268,9 +273,7 @@ function UserMenu() {
             <p className="text-xs font-medium truncate">
               {user.firstName} {user.lastName}
             </p>
-            <p className="text-[10px] text-text-dim truncate">
-              {roleLabel}
-            </p>
+            <p className="text-[10px] text-text-dim truncate">{roleLabel}</p>
           </div>
         </button>
       </DropdownMenuTrigger>
@@ -279,7 +282,10 @@ function UserMenu() {
           <UserCircle2 className="size-3.5 mr-2" />
           Account settings
         </DropdownMenuItem>
-        <DropdownMenuItem onSelect={handleLogout} className="text-destructive focus:text-destructive">
+        <DropdownMenuItem
+          onSelect={handleLogout}
+          className="text-destructive focus:text-destructive"
+        >
           <LogOut className="size-3.5 mr-2" />
           Log out
         </DropdownMenuItem>

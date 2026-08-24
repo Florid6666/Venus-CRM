@@ -18,6 +18,23 @@ import type { RequestUser } from "../../common/types/request-user.type";
 const RETENTION_DAYS = Number(process.env.SCREEN_RECORDING_RETENTION_DAYS ?? 7);
 const RETENTION_MS = RETENTION_DAYS * 24 * 60 * 60 * 1000;
 
+// Recording is limited to one department for now -- the Sales team and their
+// manager, nobody else. Enforced here rather than in the desktop agent on
+// purpose: the agent is software running on the employee's own machine, so an
+// old or modified build must not be able to record someone who isn't covered.
+// A non-Sales agent gets a clean 403 and stops scheduling.
+//
+// Comma-separated so the rollout can widen without a code change.
+const RECORDED_DEPARTMENTS = (process.env.SCREEN_RECORDING_DEPARTMENTS ?? "Sales")
+  .split(",")
+  .map((name) => name.trim().toLowerCase())
+  .filter(Boolean);
+
+function isRecordedDepartment(user: RequestUser): boolean {
+  const department = user.department?.name?.toLowerCase();
+  return !!department && RECORDED_DEPARTMENTS.includes(department);
+}
+
 const recordingUserSelect = {
   id: true,
   firstName: true,
@@ -39,6 +56,14 @@ export class ScreenRecordingsService {
   // to work hours, not the employee's personal time on the same laptop. The
   // agent treats the 409 as a dropped clip rather than a retryable failure.
   async create(user: RequestUser, file: Express.Multer.File, durationSec: number) {
+    // Checked before anything is kept: a clip from a department that isn't
+    // being recorded is deleted off the volume immediately, never written to
+    // the database, and never viewable by anyone.
+    if (!isRecordedDepartment(user)) {
+      await this.storage.delete(file.filename);
+      throw new ForbiddenException("Screen recording is not enabled for your department");
+    }
+
     const activeSession = await this.workSessions.getActive(user.id);
     if (!activeSession) {
       await this.storage.delete(file.filename);

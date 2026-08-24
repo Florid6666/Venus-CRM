@@ -15,7 +15,9 @@ export type CapturePhotoResult =
 // to *upload* (network hiccup, server error) doesn't punish the employee
 // for something outside their control, so callers should still allow the
 // action through for that one.
-export async function captureClockPhoto(): Promise<CapturePhotoResult> {
+export async function captureClockPhoto(
+  type: "CLOCK_IN" | "CLOCK_OUT" | "LOGIN" | "LOGOUT" = "CLOCK_IN",
+): Promise<CapturePhotoResult> {
   if (!navigator.mediaDevices?.getUserMedia) {
     return { ok: false, reason: "unsupported" };
   }
@@ -51,6 +53,7 @@ export async function captureClockPhoto(): Promise<CapturePhotoResult> {
     const token = useAuthStore.getState().accessToken;
     const form = new FormData();
     form.append("file", blob, "clock.jpg");
+    form.append("type", type);
     const res = await fetch(`${API_URL}/login-photos`, {
       method: "POST",
       credentials: "include",

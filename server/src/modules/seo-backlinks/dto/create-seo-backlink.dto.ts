@@ -11,13 +11,34 @@ export class CreateSeoBacklinkDto {
   targetUrl!: string;
 
   @IsOptional()
+  @IsString()
+  anchorText?: string;
+
+  @IsOptional()
   @IsInt()
   @Min(0)
   domainAuthority?: number;
 
   @IsOptional()
+  @IsInt()
+  @Min(0)
+  spamScore?: number;
+
+  @IsOptional()
+  @IsString()
+  linkType?: string;
+
+  @IsOptional()
   @IsEnum(BacklinkVerificationStatus)
   status?: BacklinkVerificationStatus;
+
+  @IsOptional()
+  @IsString()
+  rejectionNote?: string;
+
+  @IsOptional()
+  @IsUUID()
+  projectId?: string;
 
   @IsOptional()
   @IsUUID()

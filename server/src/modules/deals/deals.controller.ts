@@ -1,14 +1,28 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from "@nestjs/common";
-import { DealStage } from "@prisma/client";
+import { DealStage, RoleName } from "@prisma/client";
 import { DealsService } from "./deals.service";
+import { DealFollowUpsService } from "./deal-follow-ups.service";
 import { CreateDealDto } from "./dto/create-deal.dto";
 import { UpdateDealDto } from "./dto/update-deal.dto";
+import { Roles } from "../../common/decorators/roles.decorator";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import type { RequestUser } from "../../common/types/request-user.type";
 
 @Controller("deals")
 export class DealsController {
-  constructor(private readonly dealsService: DealsService) {}
+  constructor(
+    private readonly dealsService: DealsService,
+    private readonly followUpsEngine: DealFollowUpsService,
+  ) {}
+
+  // Admin-only manual trigger, so a due reminder can be verified/forced
+  // without waiting up to an hour -- same convention as the Bulk Email and
+  // Sequence engines' "run now" endpoints.
+  @Roles(RoleName.ADMIN)
+  @Post("follow-ups/engine/run")
+  runFollowUpsEngine() {
+    return this.followUpsEngine.runOnce();
+  }
 
   @Get()
   findAll(
@@ -26,6 +40,13 @@ export class DealsController {
       },
       user,
     );
+  }
+
+  // Must come before @Get(":id") -- otherwise "follow-ups" matches the :id
+  // wildcard and hits findOne("follow-ups") instead.
+  @Get("follow-ups")
+  findFollowUps(@CurrentUser() user: RequestUser) {
+    return this.dealsService.findFollowUps(user);
   }
 
   @Get(":id")

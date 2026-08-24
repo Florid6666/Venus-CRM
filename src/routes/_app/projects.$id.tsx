@@ -64,7 +64,14 @@ const PRIORITY_TONE: Record<TaskPriority, string> = {
 type Columns = Record<TaskStatus, ProjectTask[]>;
 
 function emptyColumns(): Columns {
-  return { TODO: [], IN_PROGRESS: [], IN_REVIEW: [], READY_FOR_TESTING: [], CHANGES_REQUIRED: [], DONE: [] };
+  return {
+    TODO: [],
+    IN_PROGRESS: [],
+    IN_REVIEW: [],
+    READY_FOR_TESTING: [],
+    CHANGES_REQUIRED: [],
+    DONE: [],
+  };
 }
 
 function groupByStatus(tasks: ProjectTask[]): Columns {
@@ -139,7 +146,11 @@ function ProjectDetailPage() {
     // it optimistically and then failing server-side.
     const draggedTask = columns[sourceStatus].find((t) => t.id === activeId);
     const canCloseThisTask = canCloseTasks || draggedTask?.testerId === currentUser?.id;
-    if (!canCloseThisTask && (destStatus === "DONE" || sourceStatus === "DONE") && destStatus !== sourceStatus) {
+    if (
+      !canCloseThisTask &&
+      (destStatus === "DONE" || sourceStatus === "DONE") &&
+      destStatus !== sourceStatus
+    ) {
       return;
     }
 
@@ -204,12 +215,14 @@ function ProjectDetailPage() {
           {project.description && (
             <p className="text-sm text-text-dim mt-1 max-w-2xl">{project.description}</p>
           )}
-          
+
           {(project.githubUrl || project.projectPassword) && (
             <div className="flex flex-wrap gap-4 mt-3 bg-panel-elevated/50 border border-border-subtle p-2.5 rounded-lg max-w-2xl text-xs">
               {project.githubUrl && (
                 <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-text-dim uppercase tracking-wider text-[10px]">Repository:</span>
+                  <span className="font-bold text-text-dim uppercase tracking-wider text-[10px]">
+                    Repository:
+                  </span>
                   <a
                     href={project.githubUrl}
                     target="_blank"
@@ -222,7 +235,9 @@ function ProjectDetailPage() {
               )}
               {project.projectPassword && (
                 <div className="flex items-center gap-1.5">
-                  <span className="font-bold text-text-dim uppercase tracking-wider text-[10px]">Environment Key:</span>
+                  <span className="font-bold text-text-dim uppercase tracking-wider text-[10px]">
+                    Environment Key:
+                  </span>
                   <code className="bg-canvas border border-border-subtle px-1.5 py-0.5 rounded text-[11px] font-mono text-warning">
                     {project.projectPassword}
                   </code>
@@ -257,7 +272,12 @@ function ProjectDetailPage() {
           <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
               {TASK_STATUSES.map((status) => (
-                <KanbanColumn key={status} status={status} tasks={columns[status]} onTaskClick={setEditingTaskId} />
+                <KanbanColumn
+                  key={status}
+                  status={status}
+                  tasks={columns[status]}
+                  onTaskClick={setEditingTaskId}
+                />
               ))}
             </div>
             <DragOverlay>{activeTask && <TaskCard task={activeTask} dragging />}</DragOverlay>
@@ -337,7 +357,12 @@ function TaskListsBar({ projectId, taskLists }: { projectId: string; taskLists: 
             placeholder="List name"
             className="h-7 text-xs w-32"
           />
-          <Button size="sm" className="h-7 text-xs" onClick={handleAdd} disabled={createTaskList.isPending}>
+          <Button
+            size="sm"
+            className="h-7 text-xs"
+            onClick={handleAdd}
+            disabled={createTaskList.isPending}
+          >
             Add
           </Button>
         </div>
@@ -423,7 +448,9 @@ function TaskCard({ task, dragging }: { task: ProjectTask; dragging?: boolean })
           <span className={`text-[10px] font-medium ${PRIORITY_TONE[task.priority]}`}>
             {TASK_PRIORITY_LABELS[task.priority]}
           </span>
-          {loggedMinutes > 0 && <span className="text-[10px] text-text-dim">{formatDuration(loggedMinutes)}</span>}
+          {loggedMinutes > 0 && (
+            <span className="text-[10px] text-text-dim">{formatDuration(loggedMinutes)}</span>
+          )}
         </div>
         {task.assignee && (
           <Avatar className="size-5">
@@ -470,7 +497,11 @@ function ProjectDailyUpdatesTab({
   }
 
   if (groups.length === 0) {
-    return <p className="text-sm text-text-dim py-8 text-center">No progress updates logged yet on this project.</p>;
+    return (
+      <p className="text-sm text-text-dim py-8 text-center">
+        No progress updates logged yet on this project.
+      </p>
+    );
   }
 
   return (
@@ -494,10 +525,15 @@ function ProjectDailyUpdatesTab({
                   >
                     {u.task.title}
                   </button>
-                  <p className="text-sm text-foreground/90 mt-1 break-words whitespace-pre-wrap">{u.content}</p>
+                  <p className="text-sm text-foreground/90 mt-1 break-words whitespace-pre-wrap">
+                    {u.content}
+                  </p>
                   <p className="text-[10px] text-text-dim mt-1">
                     {u.user.firstName} {u.user.lastName} ·{" "}
-                    {new Date(u.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    {new Date(u.createdAt).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </p>
                 </div>
               </div>

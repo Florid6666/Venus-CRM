@@ -104,11 +104,11 @@ export function WorkSessionToggle() {
   // support blocks the action -- a photo that captured fine but failed to
   // *upload* (network hiccup) still lets the employee through, since that's
   // not something they did wrong. See capture-login-photo.ts.
-  async function requireCameraOrBlock(): Promise<boolean> {
+  async function requireCameraOrBlock(type: "CLOCK_IN" | "CLOCK_OUT"): Promise<boolean> {
     setCameraError(null);
     setCapturing(true);
     try {
-      const result = await captureClockPhoto();
+      const result = await captureClockPhoto(type);
       if (!result.ok && result.reason !== "upload-failed") {
         setCameraError(CAMERA_ERROR_MESSAGES[result.reason]);
         return false;
@@ -120,12 +120,12 @@ export function WorkSessionToggle() {
   }
 
   async function handleClockInClick() {
-    if (!(await requireCameraOrBlock())) return;
+    if (!(await requireCameraOrBlock("CLOCK_IN"))) return;
     clockIn.mutate();
   }
 
   async function handleClockOutClick() {
-    if (!(await requireCameraOrBlock())) return;
+    if (!(await requireCameraOrBlock("CLOCK_OUT"))) return;
     if (elapsedMs < MINIMUM_HOURS_MS) {
       setAlertOpen(true);
     } else {

@@ -26,12 +26,14 @@ export class SeoKeywordsService {
     return this.prisma.seoKeyword.create({
       data: {
         term: dto.term,
+        searchIntent: dto.searchIntent,
         volume: dto.volume,
         difficulty: dto.difficulty,
         currentRank: dto.currentRank,
         targetRank: dto.targetRank,
         url: dto.url,
         projectId: dto.projectId,
+        campaignId: dto.campaignId,
         departmentId,
       },
       include: seoKeywordInclude,
@@ -45,7 +47,9 @@ export class SeoKeywordsService {
       return [];
     }
 
-    const where: Prisma.SeoKeywordWhereInput = scopedDepartmentId ? { departmentId: scopedDepartmentId } : {};
+    const where: Prisma.SeoKeywordWhereInput = scopedDepartmentId
+      ? { departmentId: scopedDepartmentId }
+      : {};
 
     // Non-Admin, non-Manager EMPLOYEEs only see department-wide (no-project)
     // keywords plus keywords for projects they're a member of.
@@ -61,11 +65,18 @@ export class SeoKeywordsService {
       ];
     }
 
-    return this.prisma.seoKeyword.findMany({ where, include: seoKeywordInclude, orderBy: { createdAt: "desc" } });
+    return this.prisma.seoKeyword.findMany({
+      where,
+      include: seoKeywordInclude,
+      orderBy: { createdAt: "desc" },
+    });
   }
 
   async findOne(id: string, user: RequestUser) {
-    const keyword = await this.prisma.seoKeyword.findUnique({ where: { id }, include: seoKeywordInclude });
+    const keyword = await this.prisma.seoKeyword.findUnique({
+      where: { id },
+      include: seoKeywordInclude,
+    });
     if (!keyword) {
       throw new NotFoundException("SEO keyword not found");
     }
@@ -102,7 +113,8 @@ export class SeoKeywordsService {
 
   private assertCanMutate(keyword: { departmentId: string }, user: RequestUser) {
     const isAdmin = user.role.name === RoleName.ADMIN;
-    const isDeptManager = user.role.name === RoleName.MANAGER && keyword.departmentId === user.department?.id;
+    const isDeptManager =
+      user.role.name === RoleName.MANAGER && keyword.departmentId === user.department?.id;
     if (!isAdmin && !isDeptManager) {
       throw new ForbiddenException("Only a Manager or Admin can modify SEO keywords");
     }

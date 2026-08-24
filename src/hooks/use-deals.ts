@@ -5,6 +5,7 @@ import {
   createDeal,
   getDeal,
   listDeals,
+  listDealFollowUps,
   rejectDeal,
   updateDeal,
   type CreateDealInput,
@@ -14,6 +15,10 @@ import {
 
 export function useDeals(filters: DealFilters = {}, enabled = true) {
   return useQuery({ queryKey: ["deals", filters], queryFn: () => listDeals(filters), enabled });
+}
+
+export function useDealFollowUps() {
+  return useQuery({ queryKey: ["deals", "follow-ups"], queryFn: listDealFollowUps });
 }
 
 export function useDeal(id: string | undefined) {

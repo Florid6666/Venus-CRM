@@ -1,4 +1,9 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
 import { BulkSendStatus, RoleName } from "@prisma/client";
 import { PrismaService } from "../../prisma/prisma.service";
 import { CreateBulkEmailDto } from "./dto/create-bulk-email.dto";
@@ -135,6 +140,7 @@ export class BulkEmailService {
         openCount: 0,
         sentAt: { lte: coldDate },
         contactId: { not: null },
+        dismissedAt: null,
         campaign: user.role.name === RoleName.EMPLOYEE ? { creatorId: user.id } : undefined,
       },
       include: {
@@ -155,6 +161,29 @@ export class BulkEmailService {
         },
       },
       orderBy: { sentAt: "desc" },
+    });
+  }
+
+  // Clears one item off the Follow-Up Reminders panel -- the rep followed up
+  // some other way (a call, in person) and doesn't want the reminder
+  // hanging around waiting for an email open that will never come. Same
+  // visibility scoping as the read: an Employee can only dismiss their own
+  // campaigns' recipients, Manager/Admin can dismiss anything they can see.
+  async dismissFollowUp(id: string, user: RequestUser): Promise<void> {
+    this.assertCanUse(user);
+    const recipient = await this.prisma.bulkEmailRecipient.findUnique({
+      where: { id },
+      select: { campaign: { select: { creatorId: true } } },
+    });
+    if (!recipient) {
+      throw new NotFoundException("Follow-up not found");
+    }
+    if (user.role.name === RoleName.EMPLOYEE && recipient.campaign.creatorId !== user.id) {
+      throw new ForbiddenException("You can only dismiss your own follow-ups");
+    }
+    await this.prisma.bulkEmailRecipient.update({
+      where: { id },
+      data: { dismissedAt: new Date() },
     });
   }
 

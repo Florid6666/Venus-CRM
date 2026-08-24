@@ -95,3 +95,7 @@ export function listSequenceFollowUps() {
 export function runSequenceEngine() {
   return apiFetch<{ processed: number }>("/sequences/engine/run", { method: "POST" });
 }
+
+export function dismissSequenceFollowUp(sendId: string) {
+  return apiFetch<void>(`/sequences/follow-ups/${sendId}/dismiss`, { method: "PATCH" });
+}

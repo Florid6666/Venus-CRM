@@ -56,11 +56,14 @@ export async function updateBug(id: string, input: UpdateBugInput): Promise<Bug>
   });
 }
 
-export async function addBugComment(id: string, content: string): Promise<any> {
-  return apiFetch<any>(`/bugs/${id}/comments`, {
-    method: "POST",
-    body: JSON.stringify({ content }),
-  });
+export async function addBugComment(id: string, content: string) {
+  return apiFetch<{
+    id: string;
+    bugId: string;
+    userId: string;
+    content: string;
+    createdAt: string;
+  }>(`/bugs/${id}/comments`, { method: "POST", body: JSON.stringify({ content }) });
 }
 
 export async function deleteBug(id: string): Promise<void> {

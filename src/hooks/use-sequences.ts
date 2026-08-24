@@ -12,6 +12,7 @@ import {
   stopEnrollment,
   getSequenceActivity,
   listSequenceFollowUps,
+  dismissSequenceFollowUp,
   runSequenceEngine,
   type CreateSequenceInput,
   type UpdateSequenceInput,
@@ -41,6 +42,14 @@ export function useSequenceFollowUps() {
   return useQuery({ queryKey: [...SEQUENCES_KEY, "follow-ups"], queryFn: listSequenceFollowUps });
 }
 
+export function useDismissSequenceFollowUp() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (sendId: string) => dismissSequenceFollowUp(sendId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: [...SEQUENCES_KEY, "follow-ups"] }),
+  });
+}
+
 function useInvalidateSequences() {
   const qc = useQueryClient();
   return (id?: string) => {
@@ -61,7 +70,8 @@ export function useCreateSequence() {
 export function useUpdateSequence() {
   const invalidate = useInvalidateSequences();
   return useMutation({
-    mutationFn: ({ id, input }: { id: string; input: UpdateSequenceInput }) => updateSequence(id, input),
+    mutationFn: ({ id, input }: { id: string; input: UpdateSequenceInput }) =>
+      updateSequence(id, input),
     onSuccess: (_data, variables) => invalidate(variables.id),
   });
 }

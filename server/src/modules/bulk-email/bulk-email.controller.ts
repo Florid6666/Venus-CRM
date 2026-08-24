@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from "@nestjs/common";
+import { Body, Controller, Get, Param, Patch, Post } from "@nestjs/common";
 import { RoleName } from "@prisma/client";
 import { BulkEmailService } from "./bulk-email.service";
 import { BulkEmailEngineService } from "./bulk-email-engine.service";
@@ -31,6 +31,11 @@ export class BulkEmailController {
   @Get("follow-ups")
   findFollowUps(@CurrentUser() user: RequestUser) {
     return this.bulkEmailService.findFollowUps(user);
+  }
+
+  @Patch("follow-ups/:id/dismiss")
+  dismissFollowUp(@Param("id") id: string, @CurrentUser() user: RequestUser) {
+    return this.bulkEmailService.dismissFollowUp(id, user);
   }
 
   @Get(":id")

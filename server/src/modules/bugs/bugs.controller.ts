@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
+} from "@nestjs/common";
 import { BugStatus } from "@prisma/client";
 import { JwtAuthGuard } from "../../common/guards/jwt-auth.guard";
 import { CurrentUser } from "../../common/decorators/current-user.decorator";
@@ -37,7 +47,11 @@ export class BugsController {
   }
 
   @Post(":id/comments")
-  addComment(@Param("id") id: string, @Body() dto: AddBugCommentDto, @CurrentUser() user: RequestUser) {
+  addComment(
+    @Param("id") id: string,
+    @Body() dto: AddBugCommentDto,
+    @CurrentUser() user: RequestUser,
+  ) {
     return this.bugsService.addComment(id, dto, user);
   }
 

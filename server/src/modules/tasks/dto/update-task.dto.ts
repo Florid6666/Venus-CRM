@@ -1,4 +1,13 @@
-import { IsArray, IsEnum, IsISO8601, IsInt, IsOptional, IsString, IsUUID, MinLength } from "class-validator";
+import {
+  IsArray,
+  IsEnum,
+  IsISO8601,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MinLength,
+} from "class-validator";
 import { TaskPriority, TaskStatus, TaskType } from "@prisma/client";
 
 export class UpdateTaskDto {

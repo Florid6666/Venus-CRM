@@ -11,10 +11,7 @@ export class SprintsController {
   constructor(private readonly sprintsService: SprintsService) {}
 
   @Get()
-  findAll(
-    @CurrentUser() user: RequestUser,
-    @Query("projectId") projectId?: string,
-  ) {
+  findAll(@CurrentUser() user: RequestUser, @Query("projectId") projectId?: string) {
     return this.sprintsService.findAll(user, projectId);
   }
 
@@ -29,11 +26,7 @@ export class SprintsController {
   }
 
   @Patch(":id")
-  update(
-    @Param("id") id: string,
-    @Body() dto: UpdateSprintDto,
-    @CurrentUser() user: RequestUser,
-  ) {
+  update(@Param("id") id: string, @Body() dto: UpdateSprintDto, @CurrentUser() user: RequestUser) {
     return this.sprintsService.update(id, dto, user);
   }
 
